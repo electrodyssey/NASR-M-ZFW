@@ -1,0 +1,6 @@
+board:
+  name: nasr
+  full_name: NASR
+  vendor: st
+  socs:
+    - name: stm32h723xx

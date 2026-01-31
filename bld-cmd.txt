@@ -1,0 +1,4 @@
+west build -p auto -b nasr . -- -DDTC_OVERLAY_FILE=stm32h723zg.overlay
+
+west flash
+
