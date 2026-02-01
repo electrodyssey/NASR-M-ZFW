@@ -17,15 +17,27 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		status_led: led_0 {
 			status = "okay";
 			gpios = <&gpioe 15 GPIO_ACTIVE_HIGH>;
 			label = "Status LED";
 		};
+
+		atxpson: atxpson0 {
+			 status = "okay";
+			 gpios = <&gpioe 0 GPIO_ACTIVE_HIGH>;
+			 label = "atx_ps_on";
+		};
+
 	};
 
 	aliases {
 		led0 = &status_led;
+		uartinvalid = &uartinvalidb;
+		atxpbtn = &atxpwrbtn;
+		atxok = &atxpwrok;
+		atxon = &atxpson;
 		i2c-0 = &i2c1;
 		i2c-1 = &i2c2;
 		i2c-2 = &i2c4;
@@ -35,6 +47,41 @@
 &gpioe {
 	status = "okay";
 };
+
+&gpiof {
+	status = "okay";
+};
+
+
+/ {
+  buttons {
+	compatible = "gpio-keys";
+	 
+	 uartinvalidb: uartinvalidb0 {
+	 		      status = "okay";
+	 		      gpios = <&gpiof 7 GPIO_ACTIVE_HIGH>;
+			      label = "gpio_uart_invalid_b";
+	 };
+
+	 atxpwrbtn: atxpwrbtn0 {
+	 		      status = "okay";
+	 		      gpios = <&gpiof 6 GPIO_ACTIVE_HIGH>;
+			      label = "atx_pwr_btn";
+	 };
+
+	 atxpwrok: atxpwrok0 {
+	 		      status = "okay";
+	 		      gpios = <&gpiof 2 GPIO_ACTIVE_HIGH>;
+			      label = "atx_pwr_ok";
+	 };
+
+
+
+
+};
+
+};
+
 
 
 &clk_hsi {
