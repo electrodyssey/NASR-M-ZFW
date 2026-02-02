@@ -8,9 +8,6 @@ toolchain:
 ram: 372
 flash: 1024
 supported:
-  - arduino_gpio
-  - arduino_i2c
-  - arduino_spi
   - uart
   - gpio
   - counter

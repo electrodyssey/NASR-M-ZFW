@@ -21,8 +21,6 @@
 #include <zephyr/posix/unistd.h>
 #endif
 
-//#include <gpio.h>
-
 /* LED configuration */
 #define LED0_NODE DT_ALIAS(led0)
 #if DT_NODE_HAS_STATUS(LED0_NODE, okay)
@@ -61,14 +59,34 @@ static const struct gpio_dt_spec atxpwok = GPIO_DT_SPEC_GET(ATXOK_NODE, gpios);
 
 
 
-char cmd_version[512] = "ver. test 0.1";
+char version[512] = "ver. test 0.1\0";
 
-static int cmd_demo_ping(const struct shell *sh, size_t argc, char **argv)
+static int cmd_pwr_atx(const struct shell *sh, size_t argc, char **argv)
 {
-	ARG_UNUSED(argc);
-	ARG_UNUSED(argv);
+  if (2 != argc)
+    {
+      shell_print(sh, "command accepts a single parameter, either 'on' or 'off'");
 
-	shell_print(sh, "pong");
+      return 0;
+    }
+
+  
+  if (0 == strncmp(argv[1], "on", 2))
+    {
+	shell_print(sh, "Turning ATX ON");
+	gpio_pin_set_dt(&atxpwon, 1);
+	
+    } else if (0 == strncmp(argv[1], "off", 3))
+    {
+	shell_print(sh, "Turning ATX OFF");
+	gpio_pin_set_dt(&atxpwon, 0);
+    }
+     else
+    {
+      shell_print(sh, "valid parameters are: 'on', 'off'");
+    }
+
+    
 
 	return 0;
 }
@@ -85,19 +103,48 @@ static int cmd_demo_params(const struct shell *sh, size_t argc,
         return 0;
 }
 
-/* Creating subcommands (level 1 command) array for command "demo". */
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_demo,
+static int cmd_version (const struct shell *sh, size_t argc,
+                           char **argv)
+{
+
+        shell_print(sh, "NASR-M MCU firmware version: %s", version);
+
+        return 0;
+}
+
+
+/* Creating subcommands (level 1 command) array for command "power". */
+
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_power,
         SHELL_CMD(params, NULL, "Print params command.",
                                                cmd_demo_params),
-        SHELL_CMD(ping,   NULL, "Ping command.", cmd_demo_ping),
+        SHELL_CMD(atx,   NULL, "ATX power control.", cmd_pwr_atx),
         SHELL_SUBCMD_SET_END
 );
+
 /* Creating root (level 0) command "demo" without a handler */
-SHELL_CMD_REGISTER(demo, &sub_demo, "Demo commands", NULL);
+SHELL_CMD_REGISTER(power, &sub_power, "Power control commands", NULL);
 
 /* Creating root (level 0) command "version" */
-SHELL_CMD_REGISTER(version, NULL, "Show kernel version", cmd_version);
+SHELL_CMD_REGISTER(version, NULL, "Show NASR-M base controller firmware version", cmd_version);
 
+static int helloCallback(const struct shell* shell, size_t argc, char** argv)
+{
+    printf("Hello, world!");
+    return 0;
+}
+
+SHELL_CMD_REGISTER(hello, NULL, "Say hello", helloCallback);
+
+/*
+static int helloCallback(const struct shell* shell, size_t argc, char** argv)
+{
+    printf("Hello, world!");
+    return 0;
+}
+
+SHELL_CMD_REGISTER(hello, NULL, "Say hello", helloCallback);
+*/
 
 int main(void)
 {
@@ -142,44 +189,33 @@ int main(void)
 	gpio_pin_configure_dt(&uart_invalid_b, GPIO_INPUT);	
 	
 
-	
-
 	gpio_pin_set_dt(&atxpwon, 1);
-	//	gpio_pin_set_dt(&led, 1);
 
 	/* Blink loop */
 
 
-	while (1) {
+	const struct device *dev;
+	uint32_t dtr = 0;
+
+
+	dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_shell_uart));
+	if (!device_is_ready(dev)) {
+	  gpio_pin_set_dt(&led, 0);
+	  return 0;
+	}
+	
+	while (!dtr) {
 
 	  //gpio_dt_spec stt;
 	  int stt;
 
+	  
 	  stt = gpio_pin_get_dt(&atxpwok);
-	  if (stt)
-	    {
-		  gpio_pin_set_dt(&led, stt);
 
-	      /*
-	      ret = gpio_pin_toggle_dt(&led);
-		
-	      if (ret < 0) {
-		printk("ERROR: Failed to toggle LED (error %d)\n", ret);
-		return -1;
-	      }
-		
-	      led_state = !led_state;
-	      printk("LED: %s\n", led_state ? "ON " : "OFF");
-	      */
-		
-	      //k_sleep(K_MSEC(1000));
-	    }
-
+	 
+	  uart_line_ctrl_get(dev, UART_LINE_CTRL_DTR, &dtr);
+	  k_sleep(K_MSEC(10));
 	}
-
-		       
-		       
-			
 
 
 	return 0;

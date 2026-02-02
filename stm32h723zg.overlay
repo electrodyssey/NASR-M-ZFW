@@ -33,6 +33,7 @@
 	};
 
 	aliases {
+		console = &usart1;
 		led0 = &status_led;
 		uartinvalid = &uartinvalidb;
 		atxpbtn = &atxpwrbtn;
