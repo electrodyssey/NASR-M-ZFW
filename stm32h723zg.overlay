@@ -30,6 +30,12 @@
 			 label = "atx_ps_on";
 		};
 
+		sw_i2c_rst: sw_i2c_rst0 {
+			 status = "okay";
+			 gpios = <&gpioe 11 GPIO_ACTIVE_HIGH>;
+			 label = "SW_I2C_RST";
+		};
+
 	};
 
 	aliases {
@@ -39,6 +45,7 @@
 		atxpbtn = &atxpwrbtn;
 		atxok = &atxpwrok;
 		atxon = &atxpson;
+		swi2crst = &sw_i2c_rst;
 		i2c-0 = &i2c1;
 		i2c-1 = &i2c2;
 		i2c-2 = &i2c4;

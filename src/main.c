@@ -57,6 +57,13 @@ static const struct gpio_dt_spec atxpwok = GPIO_DT_SPEC_GET(ATXOK_NODE, gpios);
 #error "Unsupported board: atxok devicetree alias is not defined"
 #endif
 
+#define SW_I2C_RST_NODE DT_ALIAS(swi2crst)
+#if DT_NODE_HAS_STATUS(SW_I2C_RST_NODE, okay)
+static const struct gpio_dt_spec sw_i2c_rst = GPIO_DT_SPEC_GET(SW_I2C_RST_NODE, gpios);
+#else
+#error "Unsupported board: swi2crst devicetree alias is not defined"
+#endif
+
 
 
 char version[512] = "ver. test 0.1\0";
@@ -182,6 +189,8 @@ int main(void)
 
 	gpio_pin_configure_dt(&atxpwon, GPIO_OUTPUT_ACTIVE);
 
+	gpio_pin_configure_dt(&sw_i2c_rst, GPIO_OUTPUT_ACTIVE);
+
 	gpio_pin_configure_dt(&atxpwok, GPIO_INPUT);
 
 	gpio_pin_configure_dt(&atxpbtn, GPIO_INPUT);
@@ -190,6 +199,8 @@ int main(void)
 	
 
 	gpio_pin_set_dt(&atxpwon, 1);
+
+	gpio_pin_set_dt(&sw_i2c_rst, 1);
 
 	/* Blink loop */
 
