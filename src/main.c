@@ -135,23 +135,16 @@ SHELL_CMD_REGISTER(power, &sub_power, "Power control commands", NULL);
 /* Creating root (level 0) command "version" */
 SHELL_CMD_REGISTER(version, NULL, "Show NASR-M base controller firmware version", cmd_version);
 
-static int helloCallback(const struct shell* shell, size_t argc, char** argv)
+static int cmd_reboot(const struct shell* shell, size_t argc, char** argv)
 {
-    printf("Hello, world!");
+    printf("Cold booting the base controller...");
+    printf("");
+    NVIC_SystemReset();
     return 0;
 }
 
-SHELL_CMD_REGISTER(hello, NULL, "Say hello", helloCallback);
+SHELL_CMD_REGISTER(reboot, NULL, "Base controller reboot", cmd_reboot);
 
-/*
-static int helloCallback(const struct shell* shell, size_t argc, char** argv)
-{
-    printf("Hello, world!");
-    return 0;
-}
-
-SHELL_CMD_REGISTER(hello, NULL, "Say hello", helloCallback);
-*/
 
 int main(void)
 {
