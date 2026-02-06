@@ -13,6 +13,9 @@
 #include <zephyr/logging/log.h>
 #include <stdlib.h>
 #include <zephyr/drivers/uart.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/sys/__assert.h>
+
 #include <ctype.h>
 
 #ifdef CONFIG_ARCH_POSIX
@@ -67,6 +70,10 @@ static const struct gpio_dt_spec sw_i2c_rst = GPIO_DT_SPEC_GET(SW_I2C_RST_NODE, 
 
 
 char version[512] = "ver. test 0.1\0";
+
+int32_t ambient_temp1 = 0;
+int32_t ambient_temp2 = 0;
+
 
 static int cmd_pwr_atx(const struct shell *sh, size_t argc, char **argv)
 {
@@ -146,6 +153,64 @@ static int cmd_reboot(const struct shell* shell, size_t argc, char** argv)
 SHELL_CMD_REGISTER(reboot, NULL, "Base controller reboot", cmd_reboot);
 
 
+
+static int cmd_info(const struct shell* shell, size_t argc, char** argv)
+{
+  printf("ambient temperature: %d", ambient_temp1);
+  return 0;
+}
+
+SHELL_CMD_REGISTER(info, NULL, "system info", cmd_info);
+
+
+
+
+static void cmd_temp(const struct device *dev)
+{
+        int ret;
+        struct sensor_value temp_value;
+        struct sensor_value attr;
+
+        attr.val1 = 150;
+        attr.val2 = 0;
+        ret = sensor_attr_set(dev, SENSOR_CHAN_AMBIENT_TEMP,
+                              SENSOR_ATTR_FULL_SCALE, &attr);
+        if (ret) {
+                printk("sensor_attr_set failed ret %d\n", ret);
+                return;
+        }
+
+        attr.val1 = 8;
+        attr.val2 = 0;
+        ret = sensor_attr_set(dev, SENSOR_CHAN_AMBIENT_TEMP,
+                              SENSOR_ATTR_SAMPLING_FREQUENCY, &attr);
+        if (ret) {
+                printk("sensor_attr_set failed ret %d\n", ret);
+                return;
+        }
+
+        while (1) {
+                ret = sensor_sample_fetch(dev);
+                if (ret) {
+                        printk("sensor_sample_fetch failed ret %d\n", ret);
+                        return;
+                }
+
+                ret = sensor_channel_get(dev, SENSOR_CHAN_AMBIENT_TEMP, &temp_value);
+                if (ret) {
+                        printk("sensor_channel_get failed ret %d\n", ret);
+                        return;
+                }
+
+                //printk("temp is %d (%d micro)\n", temp_value.val1, temp_value.val2);
+		ambient_temp1 = temp_value.val1;
+
+                k_sleep(K_MSEC(1000));
+        }
+}
+
+
+
 int main(void)
 {
 	int ret;
@@ -194,6 +259,14 @@ int main(void)
 	gpio_pin_set_dt(&atxpwon, 1);
 
 	gpio_pin_set_dt(&sw_i2c_rst, 1);
+
+
+	const struct device *const tdev = DEVICE_DT_GET_ANY(ti_tmp112);
+        __ASSERT(dev != NULL, "Failed to get device binding");
+        __ASSERT(device_is_ready(dev), "Device %s is not ready", dev->name);
+
+	printk("device is %p, name is %s\n", tdev, tdev->name);
+	cmd_temp(tdev);
 
 	/* Blink loop */
 

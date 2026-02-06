@@ -49,6 +49,8 @@
 		i2c-0 = &i2c1;
 		i2c-1 = &i2c2;
 		i2c-2 = &i2c4;
+		i2c-channel-0 = &ch0;
+		i2c-channel-1 = &ch1;
 	};
 };
 
@@ -141,10 +143,103 @@
 
 /* I2C1 sw. to SYZYGY ports */
 &i2c1 {
+	status = "okay";
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
 	pinctrl-names = "default";
-	status = "okay";
+
 	clock-frequency = <I2C_BITRATE_FAST>;
+	label = "I2C_1";
+
+	mux: tca9548a@70 {
+          compatible = "ti,tca9548a";
+          reg = <0x70>;
+          status = "okay";
+          label = "i2c_mux";
+          #address-cells = <1>;
+          #size-cells = <0>;
+
+          ch0: mux_i2c@0 {
+            compatible = "ti,tca9548a-channel";
+	    status = "okay";
+              reg = <0>;
+              #address-cells = <1>;
+              #size-cells = <0>;
+          };
+
+
+          ch1: mux_i2c@1 {
+              compatible = "ti,tca9548a-channel";
+	      status = "okay"; 
+              reg = <1>;
+
+              #address-cells = <1>;
+              #size-cells = <0>;
+
+
+
+	      temp_sens_1: tmp112@48 {
+                  compatible = "ti,tmp112";
+                  reg = <0x48>;
+		  label = "tmp1";
+		  status = "okay";
+              };
+	      
+          };
+
+          ch2: mux_i2c@2{
+              compatible = "ti,tca9548a-channel";
+              reg = <2>;
+
+              #address-cells = <1>;
+              #size-cells = <0>;
+          };
+
+          ch3: mux_i2c@3{
+              compatible = "ti,tca9548a-channel";
+              reg = <3>;
+
+              #address-cells = <1>;
+              #size-cells = <0>;
+          };
+
+          ch4: mux_i2c@4{
+              compatible = "ti,tca9548a-channel";
+              reg = <4>;
+
+              #address-cells = <1>;
+              #size-cells = <0>;
+          };
+
+          ch5: mux_i2c@5{
+              compatible = "ti,tca9548a-channel";
+              reg = <5>;
+
+              #address-cells = <1>;
+              #size-cells = <0>;
+          };
+
+          ch6: mux_i2c@6{
+              compatible = "ti,tca9548a-channel";
+              reg = <6>;
+
+              #address-cells = <1>;
+              #size-cells = <0>;
+          };
+
+
+          ch7: mux_i2c@7{
+              compatible = "ti,tca9548a-channel";
+              reg = <7>;
+
+              #address-cells = <1>;
+              #size-cells = <0>;
+          };
+
+
+
+      }; /*mux*/
+    
+
 };
 
 /* I2C4 clk ctl */
