@@ -60,6 +60,14 @@ static const struct gpio_dt_spec atxpwok = GPIO_DT_SPEC_GET(ATXOK_NODE, gpios);
 #error "Unsupported board: atxok devicetree alias is not defined"
 #endif
 
+#define BOOTBTN_NODE DT_ALIAS(bootbtn)
+#if DT_NODE_HAS_STATUS(BOOTBTN_NODE, okay)
+static const struct gpio_dt_spec boot0btn = GPIO_DT_SPEC_GET(BOOTBTN_NODE, gpios);
+#else
+#error "Unsupported board: bootbtn devicetree alias is not defined"
+#endif
+
+
 #define SW_I2C_RST_NODE DT_ALIAS(swi2crst)
 #if DT_NODE_HAS_STATUS(SW_I2C_RST_NODE, okay)
 static const struct gpio_dt_spec sw_i2c_rst = GPIO_DT_SPEC_GET(SW_I2C_RST_NODE, gpios);
@@ -68,11 +76,73 @@ static const struct gpio_dt_spec sw_i2c_rst = GPIO_DT_SPEC_GET(SW_I2C_RST_NODE, 
 #endif
 
 
+#define TEMP1_NODE DT_ALIAS(thermometer1)
+#if DT_NODE_HAS_STATUS(TEMP1_NODE, okay)
+const struct device *const tdev1 = DEVICE_DT_GET(TEMP1_NODE);
+#else
+#error "Unsupported board: thermometer1 devicetree alias is not defined"
+#endif
+
+
+#define TEMP2_NODE DT_ALIAS(thermometer2)
+#if DT_NODE_HAS_STATUS(TEMP2_NODE, okay)
+const struct device *const tdev2 = DEVICE_DT_GET(TEMP2_NODE);
+#else
+#error "Unsupported board: thermometer2 devicetree alias is not defined"
+#endif
+
+
 
 char version[512] = "ver. test 0.1\0";
 
 int32_t ambient_temp1 = 0;
 int32_t ambient_temp2 = 0;
+
+int32_t boot_stt = 0;
+
+static void cmd_temp(const struct device *dev)
+{
+        int ret;
+        struct sensor_value temp_value;
+        struct sensor_value attr;
+
+        attr.val1 = 150;
+        attr.val2 = 0;
+        ret = sensor_attr_set(dev, SENSOR_CHAN_AMBIENT_TEMP,
+                              SENSOR_ATTR_FULL_SCALE, &attr);
+        if (ret) {
+                printk("sensor_attr_set failed ret %d\n", ret);
+                return;
+        }
+
+        attr.val1 = 8;
+        attr.val2 = 0;
+        ret = sensor_attr_set(dev, SENSOR_CHAN_AMBIENT_TEMP,
+                              SENSOR_ATTR_SAMPLING_FREQUENCY, &attr);
+        if (ret) {
+                printk("sensor_attr_set failed ret %d\n", ret);
+                return;
+        }
+
+        while (1) {
+                ret = sensor_sample_fetch(dev);
+                if (ret) {
+                        printk("sensor_sample_fetch failed ret %d\n", ret);
+                        return;
+                }
+
+                ret = sensor_channel_get(dev, SENSOR_CHAN_AMBIENT_TEMP, &temp_value);
+                if (ret) {
+                        printk("sensor_channel_get failed ret %d\n", ret);
+                        return;
+                }
+
+                //printk("temp is %d (%d micro)\n", temp_value.val1, temp_value.val2);
+		ambient_temp1 = temp_value.val1;
+
+		//                k_sleep(K_MSEC(1000));
+        }
+}
 
 
 static int cmd_pwr_atx(const struct shell *sh, size_t argc, char **argv)
@@ -121,7 +191,7 @@ static int cmd_version (const struct shell *sh, size_t argc,
                            char **argv)
 {
 
-        shell_print(sh, "NASR-M MCU firmware version: %s", version);
+        shell_print(sh, "NASR-M MCU firmware version: %s\r\n", version);
 
         return 0;
 }
@@ -144,8 +214,7 @@ SHELL_CMD_REGISTER(version, NULL, "Show NASR-M base controller firmware version"
 
 static int cmd_reboot(const struct shell* shell, size_t argc, char** argv)
 {
-    printf("Cold booting the base controller...");
-    printf("");
+    printf("Cold booting the base controller...\r\n");
     NVIC_SystemReset();
     return 0;
 }
@@ -156,7 +225,11 @@ SHELL_CMD_REGISTER(reboot, NULL, "Base controller reboot", cmd_reboot);
 
 static int cmd_info(const struct shell* shell, size_t argc, char** argv)
 {
-  printf("ambient temperature: %d", ambient_temp1);
+
+  printf("ambient temperature: %d\r\n", ambient_temp1);
+
+  //  boot_stt = gpio_pin_get_dt(&boot0btn);
+  //  printf("boot btn: %d\r\n", boot_stt);
   return 0;
 }
 
@@ -165,49 +238,6 @@ SHELL_CMD_REGISTER(info, NULL, "system info", cmd_info);
 
 
 
-static void cmd_temp(const struct device *dev)
-{
-        int ret;
-        struct sensor_value temp_value;
-        struct sensor_value attr;
-
-        attr.val1 = 150;
-        attr.val2 = 0;
-        ret = sensor_attr_set(dev, SENSOR_CHAN_AMBIENT_TEMP,
-                              SENSOR_ATTR_FULL_SCALE, &attr);
-        if (ret) {
-                printk("sensor_attr_set failed ret %d\n", ret);
-                return;
-        }
-
-        attr.val1 = 8;
-        attr.val2 = 0;
-        ret = sensor_attr_set(dev, SENSOR_CHAN_AMBIENT_TEMP,
-                              SENSOR_ATTR_SAMPLING_FREQUENCY, &attr);
-        if (ret) {
-                printk("sensor_attr_set failed ret %d\n", ret);
-                return;
-        }
-
-        while (1) {
-                ret = sensor_sample_fetch(dev);
-                if (ret) {
-                        printk("sensor_sample_fetch failed ret %d\n", ret);
-                        return;
-                }
-
-                ret = sensor_channel_get(dev, SENSOR_CHAN_AMBIENT_TEMP, &temp_value);
-                if (ret) {
-                        printk("sensor_channel_get failed ret %d\n", ret);
-                        return;
-                }
-
-                //printk("temp is %d (%d micro)\n", temp_value.val1, temp_value.val2);
-		ambient_temp1 = temp_value.val1;
-
-                k_sleep(K_MSEC(1000));
-        }
-}
 
 
 
@@ -216,16 +246,16 @@ int main(void)
 	int ret;
 	bool led_state = true;
 
-	printk("\n\n=== NASR-M LED Test ===\n");
-	printk("Testing LED on GPIO Port %c, Pin %d\n", 
-	       'A' + (led.port->name[4] - 'A'), led.pin);
+	printk("\n\n=== NASR-M Base Controller start ===\n");
+	//printk("Testing LED on GPIO Port %c, Pin %d\n", 
+	//	       'A' + (led.port->name[4] - 'A'), led.pin);
 
 	/* Check if LED GPIO is ready */
-	if (!gpio_is_ready_dt(&led)) {
-		printk("ERROR: LED GPIO device %s is not ready\n", led.port->name);
-		return -1;
-	}
-	printk("LED GPIO device is ready\n");
+	//if (!gpio_is_ready_dt(&led)) {
+	//	printk("ERROR: LED GPIO device %s is not ready\n", led.port->name);
+	//	return -1;
+	//}
+	//printk("LED GPIO device is ready\n");
 
 	/* Configure LED pin as output */
 	ret = gpio_pin_configure_dt(&led, GPIO_OUTPUT_ACTIVE);
@@ -233,7 +263,7 @@ int main(void)
 		printk("ERROR: Failed to configure LED GPIO (error %d)\n", ret);
 		return -1;
 	}
-	printk("LED GPIO configured successfully\n");
+	//printk("LED GPIO configured successfully\n");
 
 	/* Turn LED ON initially */
 	ret = gpio_pin_set_dt(&led, 1);
@@ -241,8 +271,8 @@ int main(void)
 		printk("ERROR: Failed to set LED (error %d)\n", ret);
 		return -1;
 	}
-	printk("LED turned ON\n");
-	printk("\nStarting blink loop...\n\n");
+	//	printk("LED turned ON\n");
+	//	printk("\nStarting blink loop...\n\n");
 
 
 	gpio_pin_configure_dt(&atxpwon, GPIO_OUTPUT_ACTIVE);
@@ -252,8 +282,10 @@ int main(void)
 	gpio_pin_configure_dt(&atxpwok, GPIO_INPUT);
 
 	gpio_pin_configure_dt(&atxpbtn, GPIO_INPUT);
+
+	gpio_pin_configure_dt(&boot0btn, GPIO_INPUT);
 	
-	gpio_pin_configure_dt(&uart_invalid_b, GPIO_INPUT);	
+	gpio_pin_configure_dt(&uart_invalid_b, GPIO_INPUT);
 	
 
 	gpio_pin_set_dt(&atxpwon, 1);
@@ -261,12 +293,21 @@ int main(void)
 	gpio_pin_set_dt(&sw_i2c_rst, 1);
 
 
-	const struct device *const tdev = DEVICE_DT_GET_ANY(ti_tmp112);
-        __ASSERT(dev != NULL, "Failed to get device binding");
-        __ASSERT(device_is_ready(dev), "Device %s is not ready", dev->name);
+	//	const struct device *const tdev = DEVICE_DT_GET_ANY(ti_tmp112);
+	//	const struct device *const tdev = DEVICE_DT_GET(tmp112@48);
+	
+        __ASSERT(tdev1 != NULL, "Failed to get device binding thermometer1");
+        __ASSERT(device_is_ready(tdev1), "Device %s is not ready", tdev1->name);
 
-	printk("device is %p, name is %s\n", tdev, tdev->name);
-	cmd_temp(tdev);
+	printk("device is %p, name is %s\n", tdev1, tdev1->name);
+	cmd_temp(tdev1);
+
+
+        __ASSERT(tdev2 != NULL, "Failed to get device binding thermometer2");
+        __ASSERT(device_is_ready(tdev2), "Device %s is not ready", tdev2->name);
+
+	printk("device is %p, name is %s\n", tdev2, tdev2->name);
+	cmd_temp(tdev2);
 
 	/* Blink loop */
 
@@ -284,14 +325,18 @@ int main(void)
 	while (!dtr) {
 
 	  //gpio_dt_spec stt;
-	  int stt;
+	  //int stt;
 
 	  
-	  stt = gpio_pin_get_dt(&atxpwok);
+	  
+	  //gpio_pin_set_dt(&led, stt);
 
 	 
 	  uart_line_ctrl_get(dev, UART_LINE_CTRL_DTR, &dtr);
 	  k_sleep(K_MSEC(10));
+
+
+	    
 	}
 
 

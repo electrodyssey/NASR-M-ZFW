@@ -45,12 +45,15 @@
 		atxpbtn = &atxpwrbtn;
 		atxok = &atxpwrok;
 		atxon = &atxpson;
+		bootbtn = &bootbutton;
 		swi2crst = &sw_i2c_rst;
 		i2c-0 = &i2c1;
 		i2c-1 = &i2c2;
 		i2c-2 = &i2c4;
 		i2c-channel-0 = &ch0;
 		i2c-channel-1 = &ch1;
+		thermometer1 = &temp_sens_1;
+		thermometer2 = &temp_sens_2;
 	};
 };
 
@@ -83,6 +86,12 @@
 	 		      status = "okay";
 	 		      gpios = <&gpiof 2 GPIO_ACTIVE_HIGH>;
 			      label = "atx_pwr_ok";
+	 };
+
+	 bootbutton: boot0 {
+	 		      status = "okay";
+	 		      gpios = <&gpioh 3 GPIO_ACTIVE_HIGH>;
+			      label = "boot0";
 	 };
 
 
@@ -180,7 +189,14 @@
 	      temp_sens_1: tmp112@48 {
                   compatible = "ti,tmp112";
                   reg = <0x48>;
-		  label = "tmp1";
+		  label = "thermometer1";
+		  status = "okay";
+              };
+
+	      temp_sens_2: tmp112@49 {
+                  compatible = "ti,tmp112";
+                  reg = <0x49>;
+		  label = "thermometer2";
 		  status = "okay";
               };
 	      
@@ -216,6 +232,14 @@
 
               #address-cells = <1>;
               #size-cells = <0>;
+
+	      viodac_1: tmp112@48 {
+                  compatible = "ti,tmp112";
+                  reg = <0x48>;
+		  label = "tmp1";
+		  status = "okay";
+              };
+
           };
 
           ch6: mux_i2c@6{
