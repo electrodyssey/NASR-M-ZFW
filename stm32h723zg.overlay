@@ -36,6 +36,13 @@
 			 label = "SW_I2C_RST";
 		};
 
+		zynqpwen: zynqpwen0 {
+			 status = "okay";
+			 gpios = <&gpioe 1 GPIO_ACTIVE_HIGH>;
+			 label = "ZYNQ_PWCTL_EN";
+		};
+
+
 	};
 
 	aliases {
@@ -52,8 +59,9 @@
 		i2c-2 = &i2c4;
 		i2c-channel-0 = &ch0;
 		i2c-channel-1 = &ch1;
-		thermometer1 = &temp_sens_1;
-		thermometer2 = &temp_sens_2;
+		tmps1 = &temp_sens_1;
+		tmps2 = &temp_sens_2;
+		zynqpwctlen = &zynqpwen;
 	};
 };
 
@@ -166,6 +174,7 @@
           label = "i2c_mux";
           #address-cells = <1>;
           #size-cells = <0>;
+	  reset-gpios = <&gpioe 1 GPIO_ACTIVE_LOW>;
 
           ch0: mux_i2c@0 {
             compatible = "ti,tca9548a-channel";

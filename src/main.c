@@ -76,7 +76,7 @@ static const struct gpio_dt_spec sw_i2c_rst = GPIO_DT_SPEC_GET(SW_I2C_RST_NODE, 
 #endif
 
 
-#define TEMP1_NODE DT_ALIAS(thermometer1)
+#define TEMP1_NODE DT_ALIAS(tmps1)
 #if DT_NODE_HAS_STATUS(TEMP1_NODE, okay)
 const struct device *const tdev1 = DEVICE_DT_GET(TEMP1_NODE);
 #else
@@ -84,11 +84,19 @@ const struct device *const tdev1 = DEVICE_DT_GET(TEMP1_NODE);
 #endif
 
 
-#define TEMP2_NODE DT_ALIAS(thermometer2)
+#define TEMP2_NODE DT_ALIAS(tmps2)
 #if DT_NODE_HAS_STATUS(TEMP2_NODE, okay)
 const struct device *const tdev2 = DEVICE_DT_GET(TEMP2_NODE);
 #else
 #error "Unsupported board: thermometer2 devicetree alias is not defined"
+#endif
+
+
+#define ZYNQ_PWCTL_EN_NODE DT_ALIAS(zynqpwctlen)
+#if DT_NODE_HAS_STATUS(ZYNQ_PWCTL_EN_NODE, okay)
+static const struct gpio_dt_spec zynqpwen = GPIO_DT_SPEC_GET(ZYNQ_PWCTL_EN_NODE, gpios);
+#else
+#error "Unsupported board: zynqpwctlen devicetree alias is not defined"
 #endif
 
 
@@ -100,8 +108,10 @@ int32_t ambient_temp2 = 0;
 
 int32_t boot_stt = 0;
 
-static void cmd_temp(const struct device *dev)
+static void cmd_temp(const struct device *dev, uint8_t temp_no)
 {
+
+  
         int ret;
         struct sensor_value temp_value;
         struct sensor_value attr;
@@ -124,7 +134,7 @@ static void cmd_temp(const struct device *dev)
                 return;
         }
 
-        while (1) {
+	//        while (1) {
                 ret = sensor_sample_fetch(dev);
                 if (ret) {
                         printk("sensor_sample_fetch failed ret %d\n", ret);
@@ -137,11 +147,15 @@ static void cmd_temp(const struct device *dev)
                         return;
                 }
 
-                //printk("temp is %d (%d micro)\n", temp_value.val1, temp_value.val2);
-		ambient_temp1 = temp_value.val1;
+                printk("thermometer %u; temp is %d (%d micro)\n", temp_no, temp_value.val1, temp_value.val2);
 
-		//                k_sleep(K_MSEC(1000));
-        }
+		if (1 == temp_no)
+		  ambient_temp1 = temp_value.val1;
+		else
+		  ambient_temp2 = temp_value.val1;
+
+		//k_sleep(K_MSEC(1000));
+		//}
 }
 
 
@@ -170,10 +184,37 @@ static int cmd_pwr_atx(const struct shell *sh, size_t argc, char **argv)
       shell_print(sh, "valid parameters are: 'on', 'off'");
     }
 
-    
-
-	return 0;
+  return 0;
 }
+
+static int cmd_pwr_soc(const struct shell *sh, size_t argc, char **argv)
+{
+  if (2 != argc)
+    {
+      shell_print(sh, "command accepts a single parameter, either 'on' or 'off'");
+
+      return 0;
+    }
+
+  
+  if (0 == strncmp(argv[1], "on", 2))
+    {
+	shell_print(sh, "Turning SOC power ON");
+	gpio_pin_set_dt(&zynqpwen, 1);
+	
+    } else if (0 == strncmp(argv[1], "off", 3))
+    {
+	shell_print(sh, "Turning SOC power OFF");
+	gpio_pin_set_dt(&zynqpwen, 0);
+    }
+     else
+    {
+      shell_print(sh, "valid parameters are: 'on', 'off'");
+    }
+
+  return 0;
+}
+
 
 static int cmd_demo_params(const struct shell *sh, size_t argc,
                            char **argv)
@@ -190,7 +231,6 @@ static int cmd_demo_params(const struct shell *sh, size_t argc,
 static int cmd_version (const struct shell *sh, size_t argc,
                            char **argv)
 {
-
         shell_print(sh, "NASR-M MCU firmware version: %s\r\n", version);
 
         return 0;
@@ -203,6 +243,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_power,
         SHELL_CMD(params, NULL, "Print params command.",
                                                cmd_demo_params),
         SHELL_CMD(atx,   NULL, "ATX power control.", cmd_pwr_atx),
+        SHELL_CMD(soc,   NULL, "SOC power control.", cmd_pwr_soc),
         SHELL_SUBCMD_SET_END
 );
 
@@ -226,7 +267,11 @@ SHELL_CMD_REGISTER(reboot, NULL, "Base controller reboot", cmd_reboot);
 static int cmd_info(const struct shell* shell, size_t argc, char** argv)
 {
 
-  printf("ambient temperature: %d\r\n", ambient_temp1);
+  cmd_temp(tdev1, 1);
+  printf("ambient temperature1: %d\r\n", ambient_temp1);
+
+   cmd_temp(tdev2, 2);
+  printf("ambient temperature2: %d\r\n", ambient_temp2);
 
   //  boot_stt = gpio_pin_get_dt(&boot0btn);
   //  printf("boot btn: %d\r\n", boot_stt);
@@ -279,6 +324,9 @@ int main(void)
 
 	gpio_pin_configure_dt(&sw_i2c_rst, GPIO_OUTPUT_ACTIVE);
 
+	gpio_pin_configure_dt(&zynqpwen, GPIO_OUTPUT_ACTIVE);
+	
+
 	gpio_pin_configure_dt(&atxpwok, GPIO_INPUT);
 
 	gpio_pin_configure_dt(&atxpbtn, GPIO_INPUT);
@@ -292,6 +340,7 @@ int main(void)
 
 	gpio_pin_set_dt(&sw_i2c_rst, 1);
 
+	gpio_pin_set_dt(&zynqpwen, 0);
 
 	//	const struct device *const tdev = DEVICE_DT_GET_ANY(ti_tmp112);
 	//	const struct device *const tdev = DEVICE_DT_GET(tmp112@48);
@@ -300,15 +349,17 @@ int main(void)
         __ASSERT(device_is_ready(tdev1), "Device %s is not ready", tdev1->name);
 
 	printk("device is %p, name is %s\n", tdev1, tdev1->name);
-	cmd_temp(tdev1);
+	//	cmd_temp(tdev1);
+
 
 
         __ASSERT(tdev2 != NULL, "Failed to get device binding thermometer2");
         __ASSERT(device_is_ready(tdev2), "Device %s is not ready", tdev2->name);
 
 	printk("device is %p, name is %s\n", tdev2, tdev2->name);
-	cmd_temp(tdev2);
+	//cmd_temp(tdev2);
 
+	
 	/* Blink loop */
 
 
