@@ -36,11 +36,23 @@
 			 label = "SW_I2C_RST";
 		};
 
+		clk_i2c_rst: clk_i2c_rst0 {
+			 status = "okay";
+			 gpios = <&gpioe 13 GPIO_ACTIVE_HIGH>;
+			 label = "SW_I2C_RST";
+
+		};
+
 		zynqpwen: zynqpwen0 {
 			 status = "okay";
 			 gpios = <&gpioe 1 GPIO_ACTIVE_HIGH>;
 			 label = "ZYNQ_PWCTL_EN";
 		};
+
+        clkctlled: cctlled0 {
+            gpios = <&gpio_clk_exp 13 GPIO_ACTIVE_HIGH>;
+            label = "Clock control LED";
+        };
 
 
 	};
@@ -54,6 +66,7 @@
 		atxon = &atxpson;
 		bootbtn = &bootbutton;
 		swi2crst = &sw_i2c_rst;
+		clki2crst = &clk_i2c_rst;
 		i2c-0 = &i2c1;
 		i2c-1 = &i2c2;
 		i2c-2 = &i2c4;
@@ -62,6 +75,7 @@
 		tmps1 = &temp_sens_1;
 		tmps2 = &temp_sens_2;
 		zynqpwctlen = &zynqpwen;
+		cctlled = &clkctlled;
 	};
 };
 
@@ -165,7 +179,7 @@
 	pinctrl-names = "default";
 
 	clock-frequency = <I2C_BITRATE_FAST>;
-	label = "I2C_1";
+	label = "i2c1";
 
 	mux: tca9548a@70 {
           compatible = "ti,tca9548a";
@@ -280,7 +294,59 @@
 	pinctrl-0 = <&i2c4_scl_pf14 &i2c4_sda_pf15>;
 	pinctrl-names = "default";
 	status = "okay";
+	label = "i2cclk";
 	clock-frequency = <I2C_BITRATE_FAST>;
+
+
+    gpio_clk_exp: pcal6416a@20 {
+        compatible = "nxp,pcal6416a";
+        reg = <0x20>;
+        status = "okay";
+
+	reset-gpios =  <&gpioe 13 GPIO_ACTIVE_LOW>;
+
+        gpio-controller;
+        #gpio-cells = <2>;
+        ngpios = <16>;
+
+        /* Interrupt line wired to SoC GPIO pin */
+        //interrupt-gpios = <&gpiof 3 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+
+        /* Optional: name the 16 GPIO lines */
+        gpio-line-names =
+            "cctl_exp_0", "cctl_exp_1", "cctl_exp_2", "cctl_exp_3",
+            "cctl_exp_4", "cctl_exp_5", "cctl_exp_6", "cctl_exp_7",
+            "cctl_exp_8", "cctl_exp_9", "cctl_exp_10", "cctl_exp_11",
+            "cctl_exp_12", "cctl_exp_13", "cctl_exp_14", "cctl_exp_15";
+
+        /* Optional: drive pin 6 high at boot via GPIO hog */
+        enable-hog {
+            gpio-hog;
+            gpios = <6 GPIO_ACTIVE_HIGH>;
+            output-high;
+            line-name = "clock PDN";
+        };
+
+        /* Optional: drive pin 17 high at boot via GPIO hog */
+        hardsoft-hog {
+            gpio-hog;
+            gpios = <17 GPIO_ACTIVE_HIGH>;
+            output-high;
+            line-name = "clock HARD_SOFT_MODE";
+        };
+
+        /* Optional: drive pin 13 high at boot via GPIO hog */
+        led-hog {
+            gpio-hog;
+            gpios = <13 GPIO_ACTIVE_HIGH>;
+            output-high;
+	    status = "okay";
+            line-name = "clock exp LED";
+        };
+
+
+
+    };
 };
 
 /* I2C2 mcu */
@@ -288,6 +354,7 @@
 	pinctrl-0 = <&i2c2_scl_pf1 &i2c2_sda_pf0>;
 	pinctrl-names = "default";
 	status = "okay";
+	label = "i2c2";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 

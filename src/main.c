@@ -76,6 +76,14 @@ static const struct gpio_dt_spec sw_i2c_rst = GPIO_DT_SPEC_GET(SW_I2C_RST_NODE, 
 #endif
 
 
+#define CLK_I2C_RST_NODE DT_ALIAS(clki2crst)
+#if DT_NODE_HAS_STATUS(CLK_I2C_RST_NODE, okay)
+static const struct gpio_dt_spec clk_i2c_rst = GPIO_DT_SPEC_GET(CLK_I2C_RST_NODE, gpios);
+#else
+#error "Unsupported board: clki2crst devicetree alias is not defined"
+#endif
+
+
 #define TEMP1_NODE DT_ALIAS(tmps1)
 #if DT_NODE_HAS_STATUS(TEMP1_NODE, okay)
 const struct device *const tdev1 = DEVICE_DT_GET(TEMP1_NODE);
@@ -97,6 +105,13 @@ const struct device *const tdev2 = DEVICE_DT_GET(TEMP2_NODE);
 static const struct gpio_dt_spec zynqpwen = GPIO_DT_SPEC_GET(ZYNQ_PWCTL_EN_NODE, gpios);
 #else
 #error "Unsupported board: zynqpwctlen devicetree alias is not defined"
+#endif
+
+#define CCTL_LED_NODE DT_ALIAS(cctlled)
+#if DT_NODE_HAS_STATUS(CCTL_LED_NODE, okay)
+static const struct gpio_dt_spec cctlled = GPIO_DT_SPEC_GET(CCTL_LED_NODE, gpios);
+#else
+#error "Unsupported board: cctlled devicetree alias is not defined"
 #endif
 
 
@@ -324,7 +339,13 @@ int main(void)
 
 	gpio_pin_configure_dt(&sw_i2c_rst, GPIO_OUTPUT_ACTIVE);
 
+	gpio_pin_configure_dt(&clk_i2c_rst, GPIO_OUTPUT_ACTIVE);
+
+	gpio_pin_configure_dt(&cctlled, GPIO_OUTPUT_ACTIVE);
+
 	gpio_pin_configure_dt(&zynqpwen, GPIO_OUTPUT_ACTIVE);
+
+	
 	
 
 	gpio_pin_configure_dt(&atxpwok, GPIO_INPUT);
@@ -339,6 +360,10 @@ int main(void)
 	gpio_pin_set_dt(&atxpwon, 1);
 
 	gpio_pin_set_dt(&sw_i2c_rst, 1);
+
+	//	gpio_pin_set_dt(&clk_i2c_rst, 1);
+
+	gpio_pin_set_dt(&cctlled, 1);
 
 	gpio_pin_set_dt(&zynqpwen, 0);
 
