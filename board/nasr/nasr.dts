@@ -47,6 +47,11 @@
 	};
 };
 
+&pwr {
+     power-supply = "ldo";
+};
+
+
 &gpioe {
 	status = "okay";
 };
@@ -58,7 +63,7 @@
 
 
 &clk_hse {
-	status = "ok";
+	status = "okay";
 	clock-frequency = <DT_FREQ_M(8)>;
 /*	clock_cells = <1>; */
 };
