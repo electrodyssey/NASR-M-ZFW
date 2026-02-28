@@ -38,8 +38,8 @@
 
 		clk_i2c_rst: clk_i2c_rst0 {
 			 status = "okay";
-			 gpios = <&gpioe 13 GPIO_ACTIVE_HIGH>;
-			 label = "SW_I2C_RST";
+			 gpios = <&gpioe 13 GPIO_ACTIVE_LOW>;
+			 label = "CLK_I2C_RST";
 
 		};
 
@@ -49,11 +49,16 @@
 			 label = "ZYNQ_PWCTL_EN";
 		};
 
+
         clkctlled: cctlled0 {
             gpios = <&gpio_clk_exp 13 GPIO_ACTIVE_HIGH>;
             label = "Clock control LED";
         };
 
+	clkctlpdn: cctlpdn0 {
+            gpios = <&gpio_clk_exp 06 GPIO_ACTIVE_HIGH>;
+            label = "Clock control PDN";
+        };
 
 	};
 
@@ -76,11 +81,20 @@
 		tmps2 = &temp_sens_2;
 		zynqpwctlen = &zynqpwen;
 		cctlled = &clkctlled;
+		cctlpdn = &clkctlpdn;
 	};
 };
 
 &gpioe {
 	status = "okay";
+
+    /* Name the hog node something descriptive */
+    clock_expander_reset: clock_expander_reset0 {
+        gpios = <13 GPIO_ACTIVE_HIGH>; /* Pin 13 on GPIO e */
+        output-high;                   /* Set high at boot */
+        gpio-hog;                      /* Mark as a hog */
+        /* label = "clock expander reset hog"; */
+    };
 };
 
 &gpiof {
@@ -302,12 +316,16 @@
         compatible = "nxp,pcal6416a";
         reg = <0x20>;
         status = "okay";
+	label = "clkexpander";
 
-	reset-gpios =  <&gpioe 13 GPIO_ACTIVE_LOW>;
+	/* reset-gpios =  <&gpioe 13 GPIO_ACTIVE_LOW>; */
+	/* supply-gpios = <&gpioe 0 GPIO_ACTIVE_HIGH>; */
 
         gpio-controller;
         #gpio-cells = <2>;
         ngpios = <16>;
+
+
 
         /* Interrupt line wired to SoC GPIO pin */
         //interrupt-gpios = <&gpiof 3 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
@@ -319,23 +337,25 @@
             "cctl_exp_8", "cctl_exp_9", "cctl_exp_10", "cctl_exp_11",
             "cctl_exp_12", "cctl_exp_13", "cctl_exp_14", "cctl_exp_15";
 
-        /* Optional: drive pin 6 high at boot via GPIO hog */
+        /* Optional: drive pin 6 high at boot via GPIO hog
         enable-hog {
             gpio-hog;
             gpios = <6 GPIO_ACTIVE_HIGH>;
             output-high;
             line-name = "clock PDN";
         };
+	*/
 
-        /* Optional: drive pin 17 high at boot via GPIO hog */
+        /* Optional: drive pin 17 high at boot via GPIO hog
         hardsoft-hog {
             gpio-hog;
             gpios = <17 GPIO_ACTIVE_HIGH>;
             output-high;
             line-name = "clock HARD_SOFT_MODE";
         };
+	*/
 
-        /* Optional: drive pin 13 high at boot via GPIO hog */
+        /* Optional: drive pin 13 high at boot via GPIO hog 
         led-hog {
             gpio-hog;
             gpios = <13 GPIO_ACTIVE_HIGH>;
@@ -343,7 +363,7 @@
 	    status = "okay";
             line-name = "clock exp LED";
         };
-
+*/
 
 
     };

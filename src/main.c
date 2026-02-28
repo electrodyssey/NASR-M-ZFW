@@ -114,6 +114,13 @@ static const struct gpio_dt_spec cctlled = GPIO_DT_SPEC_GET(CCTL_LED_NODE, gpios
 #error "Unsupported board: cctlled devicetree alias is not defined"
 #endif
 
+#define CCTL_PDN_NODE DT_ALIAS(cctlpdn)
+#if DT_NODE_HAS_STATUS(CCTL_PDN_NODE, okay)
+static const struct gpio_dt_spec cctlpdn = GPIO_DT_SPEC_GET(CCTL_PDN_NODE, gpios);
+#else
+#error "Unsupported board: cctlpdn devicetree alias is not defined"
+#endif
+
 
 
 char version[512] = "ver. test 0.1\0";
@@ -285,11 +292,14 @@ static int cmd_info(const struct shell* shell, size_t argc, char** argv)
   cmd_temp(tdev1, 1);
   printf("ambient temperature1: %d\r\n", ambient_temp1);
 
-   cmd_temp(tdev2, 2);
-  printf("ambient temperature2: %d\r\n", ambient_temp2);
+  //cmd_temp(tdev2, 2);
+  //printf("ambient temperature2: %d\r\n", ambient_temp2);
 
   //  boot_stt = gpio_pin_get_dt(&boot0btn);
   //  printf("boot btn: %d\r\n", boot_stt);
+  gpio_pin_set_dt(&cctlled, 1);
+  gpio_pin_set_dt(&cctlpdn, 1);
+	
   return 0;
 }
 
@@ -343,6 +353,8 @@ int main(void)
 
 	gpio_pin_configure_dt(&cctlled, GPIO_OUTPUT_ACTIVE);
 
+	gpio_pin_configure_dt(&cctlpdn, GPIO_OUTPUT_ACTIVE);
+
 	gpio_pin_configure_dt(&zynqpwen, GPIO_OUTPUT_ACTIVE);
 
 	
@@ -361,9 +373,12 @@ int main(void)
 
 	gpio_pin_set_dt(&sw_i2c_rst, 1);
 
+	gpio_pin_set_dt(&clk_i2c_rst, 0);
+
 	//	gpio_pin_set_dt(&clk_i2c_rst, 1);
 
-	gpio_pin_set_dt(&cctlled, 1);
+	//gpio_pin_set_dt(&cctlled, 1);
+	//gpio_pin_set_dt(&cctlpdn, 1);
 
 	gpio_pin_set_dt(&zynqpwen, 0);
 
