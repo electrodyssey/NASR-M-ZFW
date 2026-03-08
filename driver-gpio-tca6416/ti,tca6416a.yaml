@@ -1,0 +1,77 @@
+# Nazim; electrodyssey.net 2026
+# Copyright (c) 2022 Chromium OS Authors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Texas Instruments TCA6416A 16-bit I2C GPIO expander.
+
+  The TCA6416A provides 16 GPIO pins organised as two 8-bit ports (port 0,
+  port 1) over a single I2C interface.  It supports open-drain interrupt
+  output and an active-low hardware reset line.
+
+  Example devicetree node:
+
+    &i2c0 {
+      tca6416a: gpio@20 {
+        compatible = "ti,tca6416a";
+        reg = <0x20>;
+        gpio-controller;
+        #gpio-cells = <2>;
+        ngpios = <16>;
+
+        /* optional interrupt line (active-low, open-drain) */
+        int-gpios = <&gpio0 4 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+
+        /* optional hardware reset line (active-low) */
+        reset-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+      };
+    };
+
+  Pin numbering is flat across both ports:
+    Pins  0 –  7  → port 0 (P00 – P07)
+    Pins  8 – 15  → port 1 (P10 – P17)
+
+compatible: "ti,tca6416a"
+
+include:
+  - name: base.yaml
+  - name: gpio-controller.yaml
+  - name: i2c-device.yaml
+
+properties:
+  reg:
+    required: true
+    description: |
+      I2C device address.  The TCA6416A can be configured for two
+      addresses depending on the ADDR pin:
+        0x20  (ADDR tied LOW)
+        0x21  (ADDR tied HIGH)
+
+  "#gpio-cells":
+    const: 2
+    description: |
+      Two cells are required: <pin flags>.
+        pin   – GPIO pin number (0–15).
+        flags – GPIO flags (e.g. GPIO_ACTIVE_LOW).
+
+  int-gpios:
+    type: phandle-array
+    required: false
+    description: |
+      Phandle and GPIO specifier for the host GPIO connected to the
+      active-low, open-drain INT pin of the TCA6416A.  When configured,
+      input-state changes on the expander will trigger an interrupt on the
+      host and the driver will fire the registered GPIO callbacks.
+
+  reset-gpios:
+    type: phandle-array
+    required: false
+    description: |
+      Phandle and GPIO specifier for the host GPIO connected to the
+      active-low RESET pin of the TCA6416A.  When provided the driver
+      issues a hardware reset during initialisation.  If omitted the
+      polarity-inversion registers are cleared in software instead.
+
+gpio-cells:
+  - pin
+  - flags

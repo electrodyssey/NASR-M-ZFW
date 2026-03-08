@@ -1,0 +1,21 @@
+# TCA6416A configuration options
+
+# Nazim; electrodyssey.net 2026
+# Copyright (c) 2022 Chromium OS Authors
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig GPIO_TCA6416A
+	bool "TCA6416A driver"
+	default y
+	depends on DT_HAS_TI_TCA6416A_ENABLED
+	depends on I2C
+	help
+	  Enable driver for TCA6416A I2C IO expander chip.
+	  The TCA6416A provides 16 GPIO pins (2 x 8-bit ports) over I2C.
+
+config GPIO_TCA6416A_INIT_PRIORITY
+	int "Init priority"
+	default 70
+	depends on GPIO_TCA6416A
+	help
+	  Device driver initialization priority.

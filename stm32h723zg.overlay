@@ -38,7 +38,8 @@
 
 		clk_i2c_rst: clk_i2c_rst0 {
 			 status = "okay";
-			 gpios = <&gpioe 13 GPIO_ACTIVE_LOW>;
+			 /*gpios = <&gpioe 13 GPIO_ACTIVE_LOW>;*/
+			 gpios = <&gpioe 13 GPIO_ACTIVE_HIGH>;
 			 label = "CLK_I2C_RST";
 
 		};
@@ -49,16 +50,66 @@
 			 label = "ZYNQ_PWCTL_EN";
 		};
 
+		clkctlrefsel: cctlrefsel0 {
+			   gpios = <&gpio_clk_exp 7 GPIO_ACTIVE_HIGH>;
+			   status = "okay";
+			   label = "Clock control input reference selection";
+	        };
 
-        clkctlled: cctlled0 {
-            gpios = <&gpio_clk_exp 13 GPIO_ACTIVE_HIGH>;
-            label = "Clock control LED";
-        };
+		clkctlled: cctlled0 {
+			   gpios = <&gpio_clk_exp 11 GPIO_ACTIVE_HIGH>;
+			   status = "okay";
+			   label = "Clock control LED";
+	        };
 
-	clkctlpdn: cctlpdn0 {
-            gpios = <&gpio_clk_exp 06 GPIO_ACTIVE_HIGH>;
-            label = "Clock control PDN";
-        };
+		clkctlpdn: cctlpdn0 {
+		            gpios = <&gpio_clk_exp 06 GPIO_ACTIVE_HIGH>;
+			    status = "okay";
+			    label = "Clock control PDN";
+		};
+
+		clkctlhwsw: cctlhwsw0 {
+		            gpios = <&gpio_clk_exp 15 GPIO_ACTIVE_HIGH>;
+			    status = "okay";
+			    label = "Clock control HW_SW";
+		};
+
+		clkctlgpio0: cctlgpio00 {
+		            gpios = <&gpio_clk_exp 0 GPIO_ACTIVE_HIGH>;
+			    status = "okay";
+			    label = "Clock control GPIO0";
+		};
+
+		clkctlgpio1: cctlgpio01 {
+		            gpios = <&gpio_clk_exp 1 GPIO_ACTIVE_HIGH>;
+			    status = "okay";
+			    label = "Clock control GPIO1";
+		};
+
+		clkctlgpio2: cctlgpio02 {
+		            gpios = <&gpio_clk_exp 2 GPIO_ACTIVE_HIGH>;
+			    status = "okay";
+			    label = "Clock control GPIO2";
+		};
+
+		clkctlgpio3: cctlgpio03 {
+		            gpios = <&gpio_clk_exp 3 GPIO_ACTIVE_HIGH>;
+			    status = "okay";
+			    label = "Clock control GPIO3";
+		};
+
+		clkctlgpio4: cctlgpio04 {
+		            gpios = <&gpio_clk_exp 4 GPIO_ACTIVE_HIGH>;
+			    status = "okay";
+			    label = "Clock control GPIO4";
+		};
+
+		clkctlgpio5: cctlgpio05 {
+		            gpios = <&gpio_clk_exp 5 GPIO_ACTIVE_HIGH>;
+			    status = "okay";
+			    label = "Clock control GPIO5";
+		};
+
 
 	};
 
@@ -82,6 +133,14 @@
 		zynqpwctlen = &zynqpwen;
 		cctlled = &clkctlled;
 		cctlpdn = &clkctlpdn;
+		cctlrsel = &clkctlrefsel;
+		clkctlhsw = &clkctlhwsw;
+		clkio0 = &clkctlgpio0;
+		clkio1 = &clkctlgpio1;
+		clkio2 = &clkctlgpio2;
+		clkio3 = &clkctlgpio3;
+		clkio4 = &clkctlgpio4;
+		clkio5 = &clkctlgpio5;
 	};
 };
 
@@ -89,12 +148,14 @@
 	status = "okay";
 
     /* Name the hog node something descriptive */
-    clock_expander_reset: clock_expander_reset0 {
-        gpios = <13 GPIO_ACTIVE_HIGH>; /* Pin 13 on GPIO e */
-        output-high;                   /* Set high at boot */
-        gpio-hog;                      /* Mark as a hog */
-        /* label = "clock expander reset hog"; */
+
+/*
+  clock_expander_reset: clock_expander_reset0 {
+        gpios = <13 GPIO_ACTIVE_HIGH>; 
+        output-high;                   
+        gpio-hog;                      
     };
+    */
 };
 
 &gpiof {
@@ -309,16 +370,16 @@
 	pinctrl-names = "default";
 	status = "okay";
 	label = "i2cclk";
-	clock-frequency = <I2C_BITRATE_FAST>;
+	clock-frequency = <I2C_BITRATE_STANDARD>;
 
 
-    gpio_clk_exp: pcal6416a@20 {
-        compatible = "nxp,pcal6416a";
+    gpio_clk_exp: tca6416a@20 {
+        compatible = "ti,tca6416a";
         reg = <0x20>;
         status = "okay";
 	label = "clkexpander";
 
-	/* reset-gpios =  <&gpioe 13 GPIO_ACTIVE_LOW>; */
+	reset-gpios =  <&gpioe 13 GPIO_ACTIVE_LOW>;
 	/* supply-gpios = <&gpioe 0 GPIO_ACTIVE_HIGH>; */
 
         gpio-controller;
@@ -336,35 +397,6 @@
             "cctl_exp_4", "cctl_exp_5", "cctl_exp_6", "cctl_exp_7",
             "cctl_exp_8", "cctl_exp_9", "cctl_exp_10", "cctl_exp_11",
             "cctl_exp_12", "cctl_exp_13", "cctl_exp_14", "cctl_exp_15";
-
-        /* Optional: drive pin 6 high at boot via GPIO hog
-        enable-hog {
-            gpio-hog;
-            gpios = <6 GPIO_ACTIVE_HIGH>;
-            output-high;
-            line-name = "clock PDN";
-        };
-	*/
-
-        /* Optional: drive pin 17 high at boot via GPIO hog
-        hardsoft-hog {
-            gpio-hog;
-            gpios = <17 GPIO_ACTIVE_HIGH>;
-            output-high;
-            line-name = "clock HARD_SOFT_MODE";
-        };
-	*/
-
-        /* Optional: drive pin 13 high at boot via GPIO hog 
-        led-hog {
-            gpio-hog;
-            gpios = <13 GPIO_ACTIVE_HIGH>;
-            output-high;
-	    status = "okay";
-            line-name = "clock exp LED";
-        };
-*/
-
 
     };
 };
