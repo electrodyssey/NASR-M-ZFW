@@ -498,6 +498,7 @@ static int cmd_clock(const struct shell *sh, size_t argc, char **argv)
 
       shell_print(sh, "clk led on|off");
       shell_print(sh, "clk hw  on|off");
+      shell_print(sh, "clk ref  on|off");
 
       shell_print(sh, "clk io0 on|off");
       shell_print(sh, "clk io1 on|off");
@@ -548,15 +549,6 @@ int main(void)
 	bool led_state = true;
 
 	printk("\n\n=== NASR-M Base Controller start ===\n");
-	//printk("Testing LED on GPIO Port %c, Pin %d\n", 
-	//	       'A' + (led.port->name[4] - 'A'), led.pin);
-
-	/* Check if LED GPIO is ready */
-	//if (!gpio_is_ready_dt(&led)) {
-	//	printk("ERROR: LED GPIO device %s is not ready\n", led.port->name);
-	//	return -1;
-	//}
-	//printk("LED GPIO device is ready\n");
 
 	/* Configure LED pin as output */
 	ret = gpio_pin_configure_dt(&led, GPIO_OUTPUT_ACTIVE);
@@ -564,7 +556,6 @@ int main(void)
 		printk("ERROR: Failed to configure LED GPIO (error %d)\n", ret);
 		return -1;
 	}
-	//printk("LED GPIO configured successfully\n");
 
 	/* Turn LED ON initially */
 	ret = gpio_pin_set_dt(&led, 1);
@@ -572,9 +563,6 @@ int main(void)
 		printk("ERROR: Failed to set LED (error %d)\n", ret);
 		return -1;
 	}
-	//	printk("LED turned ON\n");
-	//	printk("\nStarting blink loop...\n\n");
-
 
 	gpio_pin_configure_dt(&atxpwon, GPIO_OUTPUT_ACTIVE);
 
