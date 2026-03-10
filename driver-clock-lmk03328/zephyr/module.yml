@@ -1,0 +1,7 @@
+name: lmk03328
+
+build:
+  cmake: ..
+  kconfig: ../Kconfig.lmk03328
+  settings:
+    dts_root: ..

@@ -1,0 +1,33 @@
+# Copyright (c) 2024 NASR
+# SPDX-License-Identifier: Apache-2.0
+
+config LMK03328
+	bool "TI LMK03328 clock generator driver"
+	default y
+	depends on DT_HAS_TI_LMK03328_ENABLED
+	select I2C
+	help
+	  Enable driver for the Texas Instruments LMK03328 I2C clock
+	  generator. On initialization the driver writes all register values
+	  defined in the device tree node to the device, programming the
+	  desired clock configuration.
+
+if LMK03328
+
+config LMK03328_INIT_PRIORITY
+	int "Init priority"
+	default 70
+	help
+	  Device driver initialization priority. The I2C bus must be ready
+	  before this driver initializes, so this value must be higher than
+	  the I2C controller init priority (typically 50).
+
+config LMK03328_LOG_LEVEL
+	int "Log level"
+	default 3
+	range 0 4
+	help
+	  Log level for the LMK03328 driver.
+	  0=OFF, 1=ERROR, 2=WARNING, 3=INFO, 4=DEBUG
+
+endif # LMK03328
