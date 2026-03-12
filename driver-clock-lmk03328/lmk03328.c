@@ -31,7 +31,7 @@ struct lmk03328_config {
 	bool software_reset;
 };
 
-static int lmk03328_init(const struct device *dev)
+static int lmk03328_program(const struct device *dev)
 {
 	const struct lmk03328_config *config = dev->config;
 	int ret;
@@ -66,9 +66,41 @@ static int lmk03328_init(const struct device *dev)
 		LOG_DBG("Software reset issued");
 	}
 
-	LOG_INF("LMK03328 initialized (%zu registers written)", config->num_regs);
+	return 0;
+}
+
+int lmk03328_reinit(const struct device *dev)
+{
+	int ret;
+
+	if (!device_is_ready(dev)) {
+		return -ENODEV;
+	}
+
+	LOG_INF("Re-initializing LMK03328");
+
+	ret = lmk03328_program(dev);
+	if (ret < 0) {
+		LOG_ERR("Re-initialization failed: %d", ret);
+		return ret;
+	}
+
+	LOG_INF("LMK03328 re-initialized successfully");
 
 	return 0;
+}
+
+static int lmk03328_init(const struct device *dev)
+{
+	int ret = lmk03328_program(dev);
+
+	if (ret == 0) {
+		const struct lmk03328_config *config = dev->config;
+
+		LOG_INF("LMK03328 initialized (%zu registers written)", config->num_regs);
+	}
+
+	return ret;
 }
 
 #define LMK03328_DEFINE(inst)							\

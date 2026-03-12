@@ -3,6 +3,7 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ZEPHYR_CLOCK="$SCRIPT_DIR/../../zephyr/drivers/clock_control"
 ZEPHYR_BINDINGS="$SCRIPT_DIR/../../zephyr/dts/bindings/clock"
+ZEPHYR_INCLUDE="$SCRIPT_DIR/../../zephyr/include/zephyr/drivers/clock_control"
 
 set -e
 
@@ -12,14 +13,18 @@ echo "This script installs the LMK03328 driver into the Zephyr tree by:"
 echo "  1. Copying lmk03328.c            -> zephyr/drivers/clock_control/"
 echo "  2. Copying Kconfig.lmk03328      -> zephyr/drivers/clock_control/"
 echo "  3. Copying ti,lmk03328.yaml      -> zephyr/dts/bindings/clock/"
-echo "  4. Patching zephyr/drivers/clock_control/CMakeLists.txt"
-echo "  5. Patching zephyr/drivers/clock_control/Kconfig"
+echo "  4. Copying lmk03328.h            -> zephyr/include/zephyr/drivers/clock_control/"
+echo "  5. Patching zephyr/drivers/clock_control/CMakeLists.txt"
+echo "  6. Patching zephyr/drivers/clock_control/Kconfig"
 echo ""
 
 echo "Copying driver files..."
 cp -v "$SCRIPT_DIR/dts/bindings/clock/ti,lmk03328.yaml"  "$ZEPHYR_BINDINGS/"
-cp -v "$SCRIPT_DIR/lmk03328.c"        "$ZEPHYR_CLOCK/"
-cp -v "$SCRIPT_DIR/Kconfig.lmk03328"  "$ZEPHYR_CLOCK/"
+cp -v "$SCRIPT_DIR/lmk03328.c"                            "$ZEPHYR_CLOCK/"
+cp -v "$SCRIPT_DIR/Kconfig.lmk03328"                      "$ZEPHYR_CLOCK/"
+
+mkdir -p "$ZEPHYR_INCLUDE"
+cp -v "$SCRIPT_DIR/include/lmk03328.h"                    "$ZEPHYR_INCLUDE/"
 
 # Add to CMakeLists.txt if not already present
 CMAKE_FILE="$ZEPHYR_CLOCK/CMakeLists.txt"

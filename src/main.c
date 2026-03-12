@@ -18,6 +18,9 @@
 
 #include <ctype.h>
 
+#include <zephyr/drivers/clock_control/lmk03328.h>
+
+
 #ifdef CONFIG_ARCH_POSIX
 #include <unistd.h>
 #else
@@ -177,6 +180,13 @@ static const struct gpio_dt_spec cctl4 = GPIO_DT_SPEC_GET(CCTL4_NODE, gpios);
 static const struct gpio_dt_spec cctl5 = GPIO_DT_SPEC_GET(CCTL5_NODE, gpios);
 #else
 #error "Unsupported board: clkio5 devicetree alias is not defined"
+#endif
+
+#define LMK03328_NODE DT_NODELABEL(lmk03328)
+#if DT_NODE_HAS_STATUS(LMK03328_NODE, okay)
+static const struct device *const lmk03328_dev = DEVICE_DT_GET(LMK03328_NODE);
+#else
+#error "Unsupported board: lmk03328 devicetree node is not defined or not okay"
 #endif
 
 
@@ -365,8 +375,8 @@ void init_clock(bool state)
   
         printf("starting up PLL\r\n");
   	gpio_pin_set_dt(&cctlpdn, 0); //clk is off
-	gpio_pin_set_dt(&cctlhsw, 1); //hwsw soft mode
-	gpio_pin_set_dt(&cctlrsel, 1); //refsel =1
+	gpio_pin_set_dt(&cctlhsw, 0); //hwsw soft mode
+	gpio_pin_set_dt(&cctlrsel, 0); //refsel =1
 
   	gpio_pin_set_dt(&cctlpdn, 1); //clk is on
 
@@ -392,6 +402,24 @@ int char_to_bool (char* c)
 
 static int cmd_clock(const struct shell *sh, size_t argc, char **argv)
 {
+  if (2 == argc)
+    {
+      if (0 == strncmp(argv[1], "program", 7))
+	{
+	  shell_print(sh, "programming the clock via i2c..");
+	  
+	  int ret = lmk03328_reinit(lmk03328_dev);
+	  if (ret < 0)
+	    {
+	      printk("WARNING: LMK03328 re-initialization failed (%d)\n", ret);
+	    }
+
+
+	  shell_print(sh, "clock programming done");
+	}
+
+      return 0;
+    }
 
   if (3 != argc && 11 != argc)
     {
@@ -506,6 +534,8 @@ static int cmd_clock(const struct shell *sh, size_t argc, char **argv)
       shell_print(sh, "clk io3 on|off");
       shell_print(sh, "clk io4 on|off");
       shell_print(sh, "clk io5 on|off");
+
+      shell_print(sh, "clk program");
 
       shell_print(sh, "clk pwr hw ref led io0 io1 io2 io3 io4 io5");
 
@@ -623,6 +653,13 @@ int main(void)
 
 	init_clock(false);
 
+	/* Re-program LMK03328 I2C registers from device tree after GPIO setup */
+	/*
+	ret = lmk03328_reinit(lmk03328_dev);
+	if (ret < 0) {
+		printk("WARNING: LMK03328 re-initialization failed (%d)\n", ret);
+	}
+	*/
 	//	const struct device *const tdev = DEVICE_DT_GET_ANY(ti_tmp112);
 	//	const struct device *const tdev = DEVICE_DT_GET(tmp112@48);
 	

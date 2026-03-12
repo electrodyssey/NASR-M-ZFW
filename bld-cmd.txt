@@ -1,4 +1,5 @@
-west build -p auto -b nasr . -- -DDTC_OVERLAY_FILE=stm32h723zg.overlay
+west build          # incremental build
+west build -p      # pristine (full) rebuild
 
 west flash
 
