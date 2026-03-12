@@ -275,6 +275,7 @@
           ch1: mux_i2c@1 {
               compatible = "ti,tca9548a-channel";
 	      status = "okay"; 
+		  	label = "thermometers";
               reg = <1>;
 
               #address-cells = <1>;
@@ -282,14 +283,14 @@
 
 
 
-	      temp_sens_1: tmp112@48 {
+	      temp_sens_1: tmp112_1@48 {
                   compatible = "ti,tmp112";
                   reg = <0x48>;
 		  label = "thermometer1";
 		  status = "okay";
               };
 
-	      temp_sens_2: tmp112@49 {
+	      temp_sens_2: tmp112_2@49 {
                   compatible = "ti,tmp112";
                   reg = <0x49>;
 		  label = "thermometer2";
@@ -302,10 +303,38 @@
               compatible = "ti,tca9548a-channel";
               reg = <2>;
 
-			  label = "psu_meters";
+			  label = "power_sensors";
 
               #address-cells = <1>;
               #size-cells = <0>;
+
+
+			  	ina219soc3v3: ina219s3v3@40 {
+                	compatible = "ti,ina219";
+        			reg = <0x40>;
+					label = "pws_soc3v3";
+        			shunt-milliohm = <20>; /* Shunt resistor value in mΩ */
+        			lsb-microamp = <10>;    /* Current LSB in µA */
+					status = "okay";
+    			};
+
+			  	ina219soc1v0: ina219s1v0@41 {
+                	compatible = "ti,ina219";
+        			reg = <0x41>;
+					label = "pws_soc1v0";
+        			shunt-milliohm = <20>; /* Shunt resistor value in mΩ */
+        			lsb-microamp = <10>;    /* Current LSB in µA */
+					status = "okay";
+    			};
+
+			  	ina219soc1v8: ina219s1v8@42 {
+                	compatible = "ti,ina219";
+        			reg = <0x42>;
+					label = "pws_soc1v8";
+        			shunt-milliohm = <20>; /* Shunt resistor value in mΩ */
+        			lsb-microamp = <10>;    /* Current LSB in µA */
+					status = "okay";
+    			};
           };
 
           ch3: mux_i2c@3{

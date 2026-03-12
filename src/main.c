@@ -189,6 +189,10 @@ static const struct device *const lmk03328_dev = DEVICE_DT_GET(LMK03328_NODE);
 #error "Unsupported board: lmk03328 devicetree node is not defined or not okay"
 #endif
 
+static const struct device *const pwr_soc3v3 = DEVICE_DT_GET(DT_NODELABEL(ina219soc3v3));
+static const struct device *const pwr_soc1v0 = DEVICE_DT_GET(DT_NODELABEL(ina219soc1v0));
+static const struct device *const pwr_soc1v8 = DEVICE_DT_GET(DT_NODELABEL(ina219soc1v8));
+
 
 char version[512] = "ver. test 0.1\0";
 
@@ -547,22 +551,58 @@ static int cmd_clock(const struct shell *sh, size_t argc, char **argv)
 SHELL_CMD_REGISTER(clk, NULL, "Clock control commands", cmd_clock);
 
 
+static void cmd_power_sensor(const struct device *dev, const char *name)
+{
+	struct sensor_value voltage, current, power;
+	int ret;
+
+	if (!device_is_ready(dev)) {
+		printf("power sensor %s not ready\r\n", name);
+		return;
+	}
+
+	ret = sensor_sample_fetch(dev);
+	if (ret) {
+		printf("power sensor %s: sample_fetch failed (%d)\r\n", name, ret);
+		return;
+	}
+
+	ret = sensor_channel_get(dev, SENSOR_CHAN_VOLTAGE, &voltage);
+	if (ret) {
+		printf("power sensor %s: get voltage failed (%d)\r\n", name, ret);
+		return;
+	}
+
+	ret = sensor_channel_get(dev, SENSOR_CHAN_CURRENT, &current);
+	if (ret) {
+		printf("power sensor %s: get current failed (%d)\r\n", name, ret);
+		return;
+	}
+
+	ret = sensor_channel_get(dev, SENSOR_CHAN_POWER, &power);
+	if (ret) {
+		printf("power sensor %s: get power failed (%d)\r\n", name, ret);
+		return;
+	}
+
+	printf("%s: %d.%06d V  %d.%06d A  %d.%06d W\r\n",
+	       name,
+	       voltage.val1, voltage.val2,
+	       current.val1, current.val2,
+	       power.val1,   power.val2);
+}
+
 static int cmd_info(const struct shell* shell, size_t argc, char** argv)
 {
 
   cmd_temp(tdev1, 1);
-  printf("ambient temperature1: %d\r\n", ambient_temp1);
+  cmd_temp(tdev2, 2);
+  printf("ambient temperature: %d %d\r\n", ambient_temp1, ambient_temp2);
 
-  //cmd_temp(tdev2, 2);
-  //printf("ambient temperature2: %d\r\n", ambient_temp2);
+  cmd_power_sensor(pwr_soc3v3, "soc3v3");
+  cmd_power_sensor(pwr_soc1v0, "soc1v0");
+  cmd_power_sensor(pwr_soc1v8, "soc1v8");
 
-  //  boot_stt = gpio_pin_get_dt(&boot0btn);
-  //  printf("boot btn: %d\r\n", boot_stt);
-  //  gpio_pin_set_dt(&clock_control_led, 1);
-  //  gpio_pin_set_dt(&cctlpdn, 0);
-
-  init_clock(true);
-	
   return 0;
 }
 
