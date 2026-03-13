@@ -1,0 +1,105 @@
+; LMK03328 Register Configuration - Filtered
+; Retained: reference inputs, PLL1/PLL2, multipliers/dividers, output freq & drivers
+; Removed:  device ID, reserved, STATUS pins, XO crystal cap trim,
+;           internal VCO bias/cal, global cal triggers, GPIO, I2C address, SYNC
+;
+; Format: <label> <16-bit hex>  where bits[15:8]=reg addr, bits[7:0]=reg data
+
+; ──────────────────────────────────────────────────────────────────────
+; Primary & Secondary Reference Inputs
+; ──────────────────────────────────────────────────────────────────────
+R2	0x0232	; INPUT_MUX / PRIREF input control (type, MUX for PLL1/PLL2)
+R3	0x0300	; PRIREF buffer control
+R12	0x0CDF	; PRIREF M-divider and input frequency doubler
+R13	0x0D00	; SECREF input control
+R14	0x0E00	; SECREF M-divider
+R24	0x1800	; REFSEL manual reference selection control
+R25	0x19F5	; REFDETCTL - reference input detection (slew/threshold)
+
+; ──────────────────────────────────────────────────────────────────────
+; Output Source MUX (PLL1 / PLL2 / bypass per output pair)
+; ──────────────────────────────────────────────────────────────────────
+R20	0x14FF	; Output mux OUT0/OUT1 (PLL1/PLL2/bypass select)
+R21	0x15FF	; Output mux OUT2/OUT3
+R22	0x16FF	; Output mux OUT4/OUT5
+R23	0x1702	; Output mux OUT6/OUT7
+
+; ──────────────────────────────────────────────────────────────────────
+; PLL1 - R/N dividers, fractional, post-divider, loop filter
+; ──────────────────────────────────────────────────────────────────────
+R27	0x1B58	; PLL1 R-divider [7:0]
+R28	0x1C28	; PLL1 R-divider high + charge pump current
+R29	0x1D03	; PLL1 fractional order / enable
+R30	0x1E0C	; PLL1 N-divider [7:0]
+R31	0x1F20	; PLL1 N-divider [15:8]
+R32	0x2030	; PLL1 N-divider [23:16] / fractional numerator
+R33	0x2127	; PLL1 fractional numerator
+R34	0x2230	; PLL1 fractional numerator / denominator
+R35	0x237C	; PLL1 fractional denominator
+R36	0x2427	; PLL1 fractional denominator high
+R37	0x2510	; PLL1 post-divider (VCO post-scaler)
+R38	0x262F	; PLL1 loop filter control 0
+R39	0x2710	; PLL1 loop filter control 1
+R40	0x282F	; PLL1 loop filter control 2
+R41	0x2950	; PLL1 loop filter control 3 / ICP
+R42	0x2A0E	; PLL1 loop filter control 4
+R121	0x790F	; PLL1 extended loop filter 0
+R122	0x7A0F	; PLL1 extended loop filter 1
+R123	0x7B0F	; PLL1 extended loop filter 2
+R124	0x7C0F	; PLL1 extended loop filter 3
+
+; ──────────────────────────────────────────────────────────────────────
+; PLL2 - R/N dividers, fractional, post-divider, loop filter
+; ──────────────────────────────────────────────────────────────────────
+R43	0x2B50	; PLL2 R-divider [7:0]
+R44	0x2C0E	; PLL2 R-divider high + charge pump current
+R45	0x2D0A	; PLL2 fractional order / enable
+R46	0x2E00	; PLL2 N-divider [7:0]
+R47	0x2F00	; PLL2 N-divider [15:8]
+R48	0x30FF	; PLL2 N-divider high / fractional
+R50	0x3205	; PLL2 fractional numerator
+R51	0x3303	; PLL2 fractional numerator
+R52	0x3400	; PLL2 fractional numerator / denominator
+R53	0x3500	; PLL2 fractional denominator
+R54	0x3600	; PLL2 fractional denominator high
+R55	0x3700	; PLL2 post-divider (VCO post-scaler)
+R56	0x380E	; PLL2 loop filter control 0
+R57	0x3915	; PLL2 loop filter control 1
+R58	0x3A00	; PLL2 loop filter control 2
+R59	0x3B62	; PLL2 loop filter control 3 / ICP
+R60	0x3C00	; PLL2 loop filter control 4
+R61	0x3D00	; PLL2 loop filter control 5
+R132	0x8407	; PLL2 extended loop filter 0
+R133	0x8505	; PLL2 extended loop filter 1
+
+; ──────────────────────────────────────────────────────────────────────
+; Output Dividers (OUT0-OUT7)
+; ──────────────────────────────────────────────────────────────────────
+R62	0x3E22	; OUT0 divider [7:0]
+R63	0x3F00	; OUT0 divider high
+R64	0x4000	; OUT1 divider [7:0]
+R65	0x412D	; OUT1 divider high
+R66	0x4203	; OUT2 divider [7:0]
+R67	0x431A	; OUT2 divider high
+R68	0x4403	; OUT3 divider [7:0]
+R69	0x457D	; OUT3 divider high
+R70	0x4607	; OUT4 divider [7:0]
+R71	0x4712	; OUT4 divider high
+R72	0x4818	; OUT5 divider [7:0]
+R73	0x4900	; OUT5 divider high
+R74	0x4A5A	; OUT6 divider [7:0]
+R75	0x4B00	; OUT6 divider high
+R76	0x4C00	; OUT7 divider [7:0]
+R77	0x4D00	; OUT7 divider high
+
+; ──────────────────────────────────────────────────────────────────────
+; Output Drivers (type: LVPECL/LVDS/CML/HCSL/LVCMOS, enable)
+; ──────────────────────────────────────────────────────────────────────
+R80	0x5001	; OUT0 driver config (type / enable)
+R81	0x510C	; OUT1 driver config
+R82	0x5208	; OUT2 driver config
+R83	0x5301	; OUT3 driver config
+R84	0x5404	; OUT4 driver config
+R85	0x5507	; OUT5 driver config
+R86	0x5600	; OUT6 driver config
+R87	0x5700	; OUT7 driver config

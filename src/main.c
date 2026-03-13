@@ -240,7 +240,7 @@ static void cmd_temp(const struct device *dev, uint8_t temp_no)
                         return;
                 }
 
-                printk("thermometer %u; temp is %d (%d micro)\n", temp_no, temp_value.val1, temp_value.val2);
+        //printk("thermometer %u; temp is %d (%d micro)\n", temp_no, temp_value.val1, temp_value.val2);
 
 		if (1 == temp_no)
 		  ambient_temp1 = temp_value.val1;
@@ -597,7 +597,7 @@ static int cmd_info(const struct shell* shell, size_t argc, char** argv)
 
   cmd_temp(tdev1, 1);
   cmd_temp(tdev2, 2);
-  printf("ambient temperature: %d %d\r\n", ambient_temp1, ambient_temp2);
+  printk("ambient temperature: %d %d\n", ambient_temp1, ambient_temp2);
 
   cmd_power_sensor(pwr_soc3v3, "soc3v3");
   cmd_power_sensor(pwr_soc1v0, "soc1v0");
