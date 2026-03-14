@@ -384,7 +384,7 @@ void init_clock(bool state)
 
   	gpio_pin_set_dt(&cctlpdn, 1); //clk is on
 
-        gpio_pin_set_dt(&clock_control_led, 1);
+        //gpio_pin_set_dt(&clock_control_led, 1);
     }
 }
 
@@ -686,20 +686,22 @@ int main(void)
 
 
 	
-	gpio_pin_configure_dt(&cctlpdn, GPIO_OUTPUT_INACTIVE);
-	gpio_pin_configure_dt(&cctlhsw, GPIO_OUTPUT_INACTIVE); //hwsw =0
-	gpio_pin_configure_dt(&cctlrsel, GPIO_OUTPUT_ACTIVE); //refsel =1
-
-
 	init_clock(false);
+	k_sleep(K_MSEC(100));
+	init_clock(true);
+	k_sleep(K_MSEC(1000));
 
 	/* Re-program LMK03328 I2C registers from device tree after GPIO setup */
-	/*
+
 	ret = lmk03328_reinit(lmk03328_dev);
 	if (ret < 0) {
 		printk("WARNING: LMK03328 re-initialization failed (%d)\n", ret);
 	}
-	*/
+	else
+	{
+		gpio_pin_set_dt(&clock_control_led, 1);
+	}
+
 	//	const struct device *const tdev = DEVICE_DT_GET_ANY(ti_tmp112);
 	//	const struct device *const tdev = DEVICE_DT_GET(tmp112@48);
 	

@@ -16,7 +16,7 @@ if LMK03328
 
 config LMK03328_INIT_PRIORITY
 	int "Init priority"
-	default 70
+	default 90
 	help
 	  Device driver initialization priority. The I2C bus must be ready
 	  before this driver initializes, so this value must be higher than
