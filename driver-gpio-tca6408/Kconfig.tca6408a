@@ -1,0 +1,21 @@
+# TCA6408A configuration options
+
+# Nazim; electrodyssey.net 2026
+# Copyright (c) 2022 Chromium OS Authors
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig GPIO_TCA6408A
+	bool "TCA6408A driver"
+	default y
+	depends on DT_HAS_TI_TCA6408A_ENABLED
+	depends on I2C
+	help
+	  Enable driver for TCA6408A I2C IO expander chip.
+	  The TCA6408A provides 8 GPIO pins (1 x 8-bit port) over I2C.
+
+config GPIO_TCA6408A_INIT_PRIORITY
+	int "Init priority"
+	default 70
+	depends on GPIO_TCA6408A
+	help
+	  Device driver initialization priority.
