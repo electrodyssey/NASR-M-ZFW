@@ -1,5 +1,4 @@
-/*
- * Copyright (c) 2025
+/* Copyright (c) 2025
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -27,7 +26,6 @@
 #include <zephyr/posix/unistd.h>
 #endif
 
-/* LED configuration */
 #define LED0_NODE DT_ALIAS(led0)
 #if DT_NODE_HAS_STATUS(LED0_NODE, okay)
 static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(LED0_NODE, gpios);
@@ -86,6 +84,19 @@ static const struct gpio_dt_spec clk_i2c_rst = GPIO_DT_SPEC_GET(CLK_I2C_RST_NODE
 #error "Unsupported board: clki2crst devicetree alias is not defined"
 #endif
 
+#define BCONF_RST_NODE DT_ALIAS(bconfrst)
+#if DT_NODE_HAS_STATUS(BCONF_RST_NODE, okay)
+static const struct gpio_dt_spec bconf_rst = GPIO_DT_SPEC_GET(BCONF_RST_NODE, gpios);
+#else
+#error "Unsupported board: bconfrst devicetree alias is not defined"
+#endif
+
+#define VIOC_RST_NODE DT_ALIAS(viocrst)
+#if DT_NODE_HAS_STATUS(VIOC_RST_NODE, okay)
+static const struct gpio_dt_spec vioc_rst = GPIO_DT_SPEC_GET(VIOC_RST_NODE, gpios);
+#else
+#error "Unsupported board: viocrst devicetree alias is not defined"
+#endif
 
 #define TEMP1_NODE DT_ALIAS(tmps1)
 #if DT_NODE_HAS_STATUS(TEMP1_NODE, okay)
@@ -637,6 +648,9 @@ int main(void)
 	gpio_pin_configure_dt(&atxpwon, GPIO_OUTPUT_ACTIVE);
 
 	gpio_pin_configure_dt(&sw_i2c_rst, GPIO_OUTPUT_ACTIVE);
+	gpio_pin_configure_dt(&bconf_rst, GPIO_OUTPUT_ACTIVE);
+	gpio_pin_configure_dt(&vioc_rst, GPIO_OUTPUT_ACTIVE);
+
 
 	//	gpio_pin_configure_dt(&clk_i2c_rst, GPIO_OUTPUT_ACTIVE);
 
@@ -653,6 +667,9 @@ int main(void)
 	gpio_pin_configure_dt(&cctl4, GPIO_OUTPUT_INACTIVE);
 	gpio_pin_configure_dt(&cctl5, GPIO_OUTPUT_INACTIVE);
 
+
+	gpio_pin_configure_dt(&vioc_rst, GPIO_OUTPUT_ACTIVE);
+	gpio_pin_configure_dt(&bconf_rst, GPIO_OUTPUT_ACTIVE);
 
 	gpio_pin_configure_dt(&zynqpwen, GPIO_OUTPUT_ACTIVE);
 	

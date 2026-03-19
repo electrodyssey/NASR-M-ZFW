@@ -42,6 +42,18 @@
 			 label = "CLK_I2C_RST";
 		};
 
+		bconf_rst: bconf_rst0 {
+			 status = "okay";
+			 gpios = <&gpioe 4 GPIO_ACTIVE_HIGH>;
+			 label = "BCONF_RST_B";
+		};
+
+		vioc_rst: vioc_rst0 {
+			 status = "okay";
+			 gpios = <&gpioe 12 GPIO_ACTIVE_HIGH>;
+			 label = "VIOC_I2C_EXT_RST";
+		};
+
 		zynqpwen: zynqpwen0 {
 			 status = "okay";
 			 gpios = <&gpioe 1 GPIO_ACTIVE_HIGH>;
@@ -121,6 +133,8 @@
 		bootbtn = &bootbutton;
 		swi2crst = &sw_i2c_rst;
 		clki2crst = &clk_i2c_rst;
+		viocrst = &vioc_rst;
+		bconfrst = &bconf_rst;
 		i2c-0 = &i2c1;
 		i2c-1 = &i2c2;
 		i2c-2 = &i2c4;
