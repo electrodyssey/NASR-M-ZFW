@@ -60,6 +60,12 @@
 			 label = "ZYNQ_PWCTL_EN";
 		};
 
+		zynqpsrst: zynqpsrst0 {
+			 status = "okay";
+			 gpios = <&gpioe 3 GPIO_ACTIVE_HIGH>;
+			 label = "ZYNQ_PWCTL_EN";
+		};
+
 		clkctlrefsel: cctlrefsel0 {
 			   gpios = <&gpio_clk_exp 7 GPIO_ACTIVE_HIGH>;
 			   status = "okay";
@@ -143,6 +149,7 @@
 		tmps1 = &temp_sens_1;
 		tmps2 = &temp_sens_2;
 		zynqpwctlen = &zynqpwen;
+		zynqpsreset = &zynqpsrst;
 		cctlled = &clkctlled;
 		cctlpdn = &clkctlpdn;
 		cctlrsel = &clkctlrefsel;

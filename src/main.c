@@ -121,6 +121,13 @@ static const struct gpio_dt_spec zynqpwen = GPIO_DT_SPEC_GET(ZYNQ_PWCTL_EN_NODE,
 #error "Unsupported board: zynqpwctlen devicetree alias is not defined"
 #endif
 
+#define ZYNQ_PSRST_NODE DT_ALIAS(zynqpsreset)
+#if DT_NODE_HAS_STATUS(ZYNQ_PSRST_NODE, okay)
+static const struct gpio_dt_spec zynqpsrst = GPIO_DT_SPEC_GET(ZYNQ_PSRST_NODE, gpios);
+#else
+#error "Unsupported board: zynqpsreset devicetree alias is not defined"
+#endif
+
 #define CCTL_LED_NODE DT_ALIAS(cctlled)
 #if DT_NODE_HAS_STATUS(CCTL_LED_NODE, okay)
 static const struct gpio_dt_spec clock_control_led = GPIO_DT_SPEC_GET(CCTL_LED_NODE, gpios);
@@ -562,6 +569,35 @@ static int cmd_clock(const struct shell *sh, size_t argc, char **argv)
 SHELL_CMD_REGISTER(clk, NULL, "Clock control commands", cmd_clock);
 
 
+
+
+static int cmd_ps_switch(const struct shell *sh, size_t argc, char **argv)
+{
+  if (2 == argc)
+    {
+		int stt = char_to_bool(argv[1]);
+		if (-1 != stt)
+		{
+			shell_print(sh, "PS %s", argv[1]);
+		
+			gpio_pin_set_dt(&zynqpsrst, stt);
+
+			return 0;
+		}
+		else goto help_screen;
+	}
+
+	help_screen:
+		shell_print(sh, "ps on|off");
+
+}
+
+
+
+/* Creating root (level 0) command "clock" */
+SHELL_CMD_REGISTER(ps, NULL, "PS state (on -> start PS; off -> PS in reset state) commands", cmd_ps_switch);
+
+
 static void cmd_power_sensor(const struct device *dev, const char *name)
 {
 	struct sensor_value voltage, current, power;
@@ -645,6 +681,8 @@ int main(void)
 		return -1;
 	}
 
+	
+	gpio_pin_configure_dt(&zynqpsrst, GPIO_OUTPUT_INACTIVE);
 	gpio_pin_configure_dt(&atxpwon, GPIO_OUTPUT_ACTIVE);
 
 	gpio_pin_configure_dt(&sw_i2c_rst, GPIO_OUTPUT_ACTIVE);
