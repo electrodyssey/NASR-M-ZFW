@@ -91,6 +91,13 @@ static const struct gpio_dt_spec bconf_rst = GPIO_DT_SPEC_GET(BCONF_RST_NODE, gp
 #error "Unsupported board: bconfrst devicetree alias is not defined"
 #endif
 
+#define SDSEL_NODE DT_ALIAS(sdsel)
+#if DT_NODE_HAS_STATUS(SDSEL_NODE, okay)
+static const struct gpio_dt_spec sd_sel = GPIO_DT_SPEC_GET(SDSEL_NODE, gpios);
+#else
+#error "Unsupported board: sdsel devicetree alias is not defined"
+#endif
+
 #define VIOC_RST_NODE DT_ALIAS(viocrst)
 #if DT_NODE_HAS_STATUS(VIOC_RST_NODE, okay)
 static const struct gpio_dt_spec vioc_rst = GPIO_DT_SPEC_GET(VIOC_RST_NODE, gpios);
@@ -688,6 +695,7 @@ int main(void)
 	gpio_pin_configure_dt(&sw_i2c_rst, GPIO_OUTPUT_ACTIVE);
 	gpio_pin_configure_dt(&bconf_rst, GPIO_OUTPUT_ACTIVE);
 	gpio_pin_configure_dt(&vioc_rst, GPIO_OUTPUT_ACTIVE);
+    gpio_pin_configure_dt(&sd_sel, GPIO_OUTPUT_INACTIVE);
 
 
 	//	gpio_pin_configure_dt(&clk_i2c_rst, GPIO_OUTPUT_ACTIVE);
@@ -727,6 +735,7 @@ int main(void)
 
 
 	gpio_pin_set_dt(&sw_i2c_rst, 1);
+	gpio_pin_set_dt(&sd_sel, 0);
 
 	
 	//gpio_pin_set_dt(&clk_i2c_rst, 1);

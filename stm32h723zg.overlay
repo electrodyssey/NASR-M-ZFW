@@ -48,6 +48,12 @@
 			 label = "BCONF_RST_B";
 		};
 
+		sd_sel: sd_sel0 {
+			 status = "okay";
+			 gpios = <&gpioe 6 GPIO_ACTIVE_HIGH>;
+			 label = "SD_SEL";
+		};
+
 		vioc_rst: vioc_rst0 {
 			 status = "okay";
 			 gpios = <&gpioe 12 GPIO_ACTIVE_HIGH>;
@@ -141,6 +147,7 @@
 		clki2crst = &clk_i2c_rst;
 		viocrst = &vioc_rst;
 		bconfrst = &bconf_rst;
+		sdsel = &sd_sel;
 		i2c-0 = &i2c1;
 		i2c-1 = &i2c2;
 		i2c-2 = &i2c4;
