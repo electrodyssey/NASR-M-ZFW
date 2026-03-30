@@ -409,6 +409,20 @@ void init_clock(bool state)
 
   	gpio_pin_set_dt(&cctlpdn, 1); //clk is on
 
+	
+	k_sleep(K_MSEC(100));
+
+	int ret = lmk03328_reinit(lmk03328_dev);
+	if (ret < 0) {
+		printk("WARNING: LMK03328 re-initialization failed (%d)\n", ret);
+	}
+	else
+	{
+		gpio_pin_set_dt(&clock_control_led, 1);
+	}
+
+
+
         //gpio_pin_set_dt(&clock_control_led, 1);
     }
 }
@@ -717,7 +731,7 @@ int main(void)
 	gpio_pin_configure_dt(&vioc_rst, GPIO_OUTPUT_ACTIVE);
 	gpio_pin_configure_dt(&bconf_rst, GPIO_OUTPUT_ACTIVE);
 
-	gpio_pin_configure_dt(&zynqpwen, GPIO_OUTPUT_ACTIVE);
+	gpio_pin_configure_dt(&zynqpwen, GPIO_OUTPUT_INACTIVE);
 	
 
 	gpio_pin_configure_dt(&atxpwok, GPIO_INPUT);
@@ -746,17 +760,18 @@ int main(void)
 	//gpio_pin_set_dt(&clock_control_led, 1);
 	//gpio_pin_set_dt(&cctlpdn, 1);
 
-	gpio_pin_set_dt(&zynqpwen, 0);
 
-
-	
-	init_clock(false);
-	k_sleep(K_MSEC(100));
 	init_clock(true);
 	k_sleep(K_MSEC(1000));
+	gpio_pin_set_dt(&zynqpsrst, 1);
+	k_sleep(K_MSEC(1000));
+
+	//gpio_pin_set_dt(&zynqpwen, 1);	
+	//k_sleep(K_MSEC(1000));
+
 
 	/* Re-program LMK03328 I2C registers from device tree after GPIO setup */
-
+/*
 	ret = lmk03328_reinit(lmk03328_dev);
 	if (ret < 0) {
 		printk("WARNING: LMK03328 re-initialization failed (%d)\n", ret);
@@ -765,22 +780,22 @@ int main(void)
 	{
 		gpio_pin_set_dt(&clock_control_led, 1);
 	}
-
+*/
 	//	const struct device *const tdev = DEVICE_DT_GET_ANY(ti_tmp112);
 	//	const struct device *const tdev = DEVICE_DT_GET(tmp112@48);
 	
-        __ASSERT(tdev1 != NULL, "Failed to get device binding thermometer1");
-        __ASSERT(device_is_ready(tdev1), "Device %s is not ready", tdev1->name);
+  //      __ASSERT(tdev1 != NULL, "Failed to get device binding thermometer1");
+  //      __ASSERT(device_is_ready(tdev1), "Device %s is not ready", tdev1->name);
 
-	printk("device is %p, name is %s\n", tdev1, tdev1->name);
+//	printk("device is %p, name is %s\n", tdev1, tdev1->name);
 	//	cmd_temp(tdev1);
 
 
 
-        __ASSERT(tdev2 != NULL, "Failed to get device binding thermometer2");
-        __ASSERT(device_is_ready(tdev2), "Device %s is not ready", tdev2->name);
+  //      __ASSERT(tdev2 != NULL, "Failed to get device binding thermometer2");
+  //      __ASSERT(device_is_ready(tdev2), "Device %s is not ready", tdev2->name);
 
-	printk("device is %p, name is %s\n", tdev2, tdev2->name);
+  //	printk("device is %p, name is %s\n", tdev2, tdev2->name);
 	//cmd_temp(tdev2);
 
 	
@@ -796,7 +811,11 @@ int main(void)
 	  gpio_pin_set_dt(&led, 0);
 	  return 0;
 	}
+
 	
+	int init_start_ps = 0;
+	int ps_start_on = 0;
+
 	while (!dtr) {
 
 	  //gpio_dt_spec stt;
@@ -805,6 +824,17 @@ int main(void)
 	  
 	  
 	  //gpio_pin_set_dt(&led, stt);
+
+	  if (0 == ps_start_on)
+	  {
+		if (100 < init_start_ps++)
+		{
+			ps_start_on = 1;
+
+			gpio_pin_set_dt(&zynqpwen, 1);
+			
+		}
+	  }
 
 	 
 	  uart_line_ctrl_get(dev, UART_LINE_CTRL_DTR, &dtr);
