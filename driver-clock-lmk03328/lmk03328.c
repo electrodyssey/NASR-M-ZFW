@@ -92,6 +92,7 @@ int lmk03328_reinit(const struct device *dev)
 
 static int lmk03328_init(const struct device *dev)
 {
+	/*
 	int ret = lmk03328_program(dev);
 
 	if (ret == 0) {
@@ -101,6 +102,11 @@ static int lmk03328_init(const struct device *dev)
 	}
 
 	return ret;
+	*/
+
+	//don't do anything
+
+	return 0;
 }
 
 #define LMK03328_DEFINE(inst)							\
