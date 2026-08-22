@@ -289,10 +289,9 @@
           label = "i2c_mux";
           #address-cells = <1>;
           #size-cells = <0>;
-	  reset-gpios = <&gpioe 1 GPIO_ACTIVE_LOW>;
+	  reset-gpios = <&gpioe 11 GPIO_ACTIVE_LOW>;	/* SW_I2C_RST */
 
           ch0: mux_i2c@0 {
-            compatible = "ti,tca9548a-channel";
 	    status = "okay";
               reg = <0>;
               #address-cells = <1>;
@@ -301,9 +300,7 @@
 
 
           ch1: mux_i2c@1 {
-              compatible = "ti,tca9548a-channel";
 	      status = "okay"; 
-		  	label = "thermometers";
               reg = <1>;
 
               #address-cells = <1>;
@@ -328,10 +325,8 @@
           };
 
           ch2: mux_i2c@2{
-              compatible = "ti,tca9548a-channel";
               reg = <2>;
 
-			  label = "power_sensors";
 
               #address-cells = <1>;
               #size-cells = <0>;
@@ -366,7 +361,6 @@
           };
 
           ch3: mux_i2c@3{
-              compatible = "ti,tca9548a-channel";
               reg = <3>;
 
               #address-cells = <1>;
@@ -374,7 +368,6 @@
           };
 
           ch4: mux_i2c@4{
-              compatible = "ti,tca9548a-channel";
               reg = <4>;
 
               #address-cells = <1>;
@@ -382,7 +375,6 @@
           };
 
           ch5: mux_i2c@5{
-              compatible = "ti,tca9548a-channel";
               reg = <5>;
 
               #address-cells = <1>;
@@ -398,7 +390,6 @@
           };
 
           ch6: mux_i2c@6{
-              compatible = "ti,tca9548a-channel";
               reg = <6>;
 
               #address-cells = <1>;
@@ -407,7 +398,6 @@
 
 
           ch7: mux_i2c@7{
-              compatible = "ti,tca9548a-channel";
               reg = <7>;
 
               #address-cells = <1>;

@@ -4,7 +4,9 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/i2c.h>
 #include <zephyr/sys/printk.h>
 
 #include <zephyr/shell/shell.h>
@@ -275,6 +277,108 @@ static void cmd_temp(const struct device *dev, uint8_t temp_no)
 		//k_sleep(K_MSEC(1000));
 		//}
 }
+
+
+/*
+ * Early ATX power-on.
+ *
+ * Most of the I2C peripherals (INA219 power sensors behind the TCA9548A
+ * mux, TMP112 thermometers, clock expander, ...) are powered from the ATX
+ * PSU. Zephyr probes their drivers before main() runs, so PS_ON must be
+ * asserted before the I2C bus / mux / sensor drivers initialise, otherwise
+ * the devices are not there yet and their init fails.
+ *
+ * Runs after the STM32 GPIO driver (CONFIG_GPIO_INIT_PRIORITY = 40) and
+ * before the I2C controller and TCA954x mux (50), expander (70) and
+ * sensors (90).
+ */
+#define ATX_EARLY_INIT_PRIORITY   45
+#define ATX_PWR_OK_TIMEOUT_MS     1000
+#define ATX_PWR_OK_POLL_MS        10
+#define ATX_PWR_OK_SETTLE_MS      50
+
+static int atx_early_power_on(void)
+{
+	int ret;
+	int waited_ms = 0;
+
+	ret = gpio_pin_configure_dt(&atxpwok, GPIO_INPUT);
+	if (ret < 0) {
+		printk("ATX: failed to configure PWR_OK input (%d)\n", ret);
+	}
+
+	ret = gpio_pin_configure_dt(&atxpwon, GPIO_OUTPUT_ACTIVE);
+	if (ret < 0) {
+		printk("ATX: failed to assert PS_ON (%d)\n", ret);
+		return ret;
+	}
+
+	/* Wait for the PSU to report power good, but don't block boot forever. */
+	while (gpio_pin_get_dt(&atxpwok) <= 0) {
+		if (waited_ms >= ATX_PWR_OK_TIMEOUT_MS) {
+			printk("ATX: PWR_OK not asserted after %d ms, continuing\n",
+			       waited_ms);
+			return 0;
+		}
+		k_sleep(K_MSEC(ATX_PWR_OK_POLL_MS));
+		waited_ms += ATX_PWR_OK_POLL_MS;
+	}
+
+	/* Give the downstream rails / I2C devices a moment to come up. */
+	k_sleep(K_MSEC(ATX_PWR_OK_SETTLE_MS));
+	printk("ATX: PWR_OK after %d ms\n", waited_ms);
+
+	return 0;
+}
+
+SYS_INIT(atx_early_power_on, POST_KERNEL, ATX_EARLY_INIT_PRIORITY);
+
+
+/*
+ * Wait for the ATX-powered I2C peripherals to actually answer before the
+ * sensor drivers probe them. PWR_OK alone is not enough: the sensors come
+ * up some time after it. Runs after the TCA9548A channels (prio 60) and
+ * before the expander (70) / sensors (90).
+ */
+#define I2C_READY_INIT_PRIORITY   65
+#define I2C_READY_TIMEOUT_MS      3000
+#define I2C_READY_POLL_MS         10
+
+static const struct i2c_dt_spec i2c_probe_devs[] = {
+	I2C_DT_SPEC_GET(DT_NODELABEL(ina219soc3v3)),
+	I2C_DT_SPEC_GET(DT_NODELABEL(temp_sens_1)),
+};
+
+static int atx_wait_i2c_ready(void)
+{
+	int waited_ms = 0;
+	uint8_t val;
+
+	for (size_t i = 0; i < ARRAY_SIZE(i2c_probe_devs); i++) {
+		const struct i2c_dt_spec *spec = &i2c_probe_devs[i];
+
+		if (!device_is_ready(spec->bus)) {
+			printk("ATX: I2C bus %s not ready\n", spec->bus->name);
+			continue;
+		}
+
+		while (i2c_reg_read_byte_dt(spec, 0x00, &val) != 0) {
+			if (waited_ms >= I2C_READY_TIMEOUT_MS) {
+				printk("ATX: I2C device 0x%02x on %s not responding after %d ms\n",
+				       spec->addr, spec->bus->name, waited_ms);
+				return 0;
+			}
+			k_sleep(K_MSEC(I2C_READY_POLL_MS));
+			waited_ms += I2C_READY_POLL_MS;
+		}
+	}
+
+	printk("ATX: I2C peripherals ready after %d ms\n", waited_ms);
+
+	return 0;
+}
+
+SYS_INIT(atx_wait_i2c_ready, POST_KERNEL, I2C_READY_INIT_PRIORITY);
 
 
 static int cmd_pwr_atx(const struct shell *sh, size_t argc, char **argv)
