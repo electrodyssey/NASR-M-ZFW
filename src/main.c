@@ -497,7 +497,7 @@ void init_clock(bool state)
   if (false == state)
     {
        	gpio_pin_set_dt(&cctlpdn, 0); //clock is off
-	gpio_pin_set_dt(&cctlhsw, 0); //hwsw soft mode
+	gpio_pin_set_dt(&cctlhsw, 1); //HW_SW_CTRL=1: hard pin mode (see init_clock(true))
 	gpio_pin_set_dt(&cctlrsel, 0); //refsel =1
 
   	gpio_pin_set_dt(&cctlpdn, 0); //
@@ -508,7 +508,16 @@ void init_clock(bool state)
   
         printf("starting up PLL\r\n");
   	gpio_pin_set_dt(&cctlpdn, 0); //clk is off
-	gpio_pin_set_dt(&cctlhsw, 0); //hwsw soft mode
+	/*
+	 * HW_SW_CTRL is sampled by the LMK03328 when PDN is released:
+	 * 1 = hard pin mode (ROM page from GPIO[5:0], I2C enabled),
+	 * 0 = soft pin mode (EEPROM page from GPIO[3:2]).
+	 * The register plan written by lmk03328_reinit() below produces the
+	 * PS 33.333 MHz clock on top of hard pin mode; soft pin mode with the
+	 * same plan leaves OUT3 dead. Drive the pin high explicitly instead of
+	 * relying on the board pull-up (it used to be left unconfigured).
+	 */
+	gpio_pin_set_dt(&cctlhsw, 1); //HW_SW_CTRL=1: hard pin mode
 	gpio_pin_set_dt(&cctlrsel, 0); //refsel =1
 
   	gpio_pin_set_dt(&cctlpdn, 1); //clk is on
@@ -823,6 +832,7 @@ int main(void)
 	gpio_pin_configure_dt(&cctlpdn, GPIO_OUTPUT_INACTIVE);
 
 	gpio_pin_configure_dt(&cctlrsel, GPIO_OUTPUT_INACTIVE);
+	gpio_pin_configure_dt(&cctlhsw, GPIO_OUTPUT_ACTIVE);   /* LMK03328 HW_SW_CTRL = 1 (hard pin mode) */
 
 	gpio_pin_configure_dt(&cctl0, GPIO_OUTPUT_INACTIVE);
 	gpio_pin_configure_dt(&cctl1, GPIO_OUTPUT_INACTIVE);

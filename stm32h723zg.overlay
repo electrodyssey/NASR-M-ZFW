@@ -380,11 +380,14 @@
               #address-cells = <1>;
               #size-cells = <0>;
 
+	      /* Placeholder: nothing answers at 0x48 on this channel (0x21 and
+	       * 0x60 are present - VIO DAC). Disabled until the real device
+	       * gets a node/driver. */
 	      viodac_1: tmp112@48 {
                   compatible = "ti,tmp112";
                   reg = <0x48>;
 		  label = "tmp1";
-		  status = "okay";
+		  status = "disabled";
               };
 
           };
@@ -455,12 +458,12 @@
 
 		status = "okay";
 
+		/* TICS Pro export (PS33.33 AC-coupled / SZG 64.8 MHz). Read-only
+		 * ID registers (R0-R3) and EEPROM/NVM housekeeping registers
+		 * (R136-R145) are intentionally left out: they are not part of the
+		 * frequency plan and must not be written as part of it. */
 		reg-values = <
 			0x1D01  /* R29  enable AC coupling mode on a primary input*/
-                        0x0010  /* R0     addr=0x00  val=0x10 */
-                        0x010B  /* R1     addr=0x01  val=0x0B */
-                        0x0232  /* R2     addr=0x02  val=0x32 */
-                        0x0300  /* R3     addr=0x03  val=0x00 */
                         0x0CDF  /* R12    addr=0x0C  val=0xDF */
                         0x0D00  /* R13    addr=0x0D  val=0x00 */
                         0x0E00  /* R14    addr=0x0E  val=0x00 */
@@ -585,16 +588,8 @@
                         0x8505  /* R133   addr=0x85  val=0x05 */
                         0x8600  /* R134   addr=0x86  val=0x00 */
                         0x8700  /* R135   addr=0x87  val=0x00 */
-                        0x8800  /* R136   addr=0x88  val=0x00 */
-                        0x8910  /* R137   addr=0x89  val=0x10 */
-                        0x8A00  /* R138   addr=0x8A  val=0x00 */
-                        0x8B00  /* R139   addr=0x8B  val=0x00 */
-                        0x8C00  /* R140   addr=0x8C  val=0x00 */
-                        0x8D00  /* R141   addr=0x8D  val=0x00 */
-                        0x8E00  /* R142   addr=0x8E  val=0x00 */
-                        0x8F00  /* R143   addr=0x8F  val=0x00 */
-                        0x9000  /* R144   addr=0x90  val=0x00 */
-                        0x9100  /* R145   addr=0x91  val=0x00 */
+                        /* R169/R172/R173 are not in the public register map
+                         * but are part of the TICS Pro export; keep them. */
                         0xA940  /* R169   addr=0xA9  val=0x40 */
                         0xAC24  /* R172   addr=0xAC  val=0x24 */
                         0xAD00  /* R173   addr=0xAD  val=0x00 */
