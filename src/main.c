@@ -728,6 +728,134 @@ static int cmd_ps_switch(const struct shell *sh, size_t argc, char **argv)
 
 
 
+
+/* ---------------------------------------------------------------------------
+ * Zynq boot mode control
+ *
+ * The PS samples MIO[6:2] at power-on reset (PS_POR_B rising):
+ *   MIO[2]   JTAG chain: 0 = cascaded (ARM DAP on the PL JTAG), 1 = independent
+ *   MIO[5:3] boot device (see table below)
+ *   MIO[6]   1 = PLL bypass
+ * On NASR-M these straps are driven by the BCONF expander U24 (TCA6408A,
+ * P0..P4 -> MIO2..MIO6 through 20k). The encodings below were verified on
+ * the board by reading slcr.BOOT_MODE (0xF800025C) after POR for each
+ * pattern: JTAG=0x0, QSPI=0x1, NOR=0x2, NAND=0x4, SD=0x5.
+ * ------------------------------------------------------------------------- */
+static const struct gpio_dt_spec bs_mio2 = GPIO_DT_SPEC_GET(DT_ALIAS(bsmio2), gpios);
+static const struct gpio_dt_spec bs_mio3 = GPIO_DT_SPEC_GET(DT_ALIAS(bsmio3), gpios);
+static const struct gpio_dt_spec bs_mio4 = GPIO_DT_SPEC_GET(DT_ALIAS(bsmio4), gpios);
+static const struct gpio_dt_spec bs_mio5 = GPIO_DT_SPEC_GET(DT_ALIAS(bsmio5), gpios);
+static const struct gpio_dt_spec bs_mio6 = GPIO_DT_SPEC_GET(DT_ALIAS(bsmio6), gpios);
+
+struct zynq_bootmode {
+	const char *name;
+	uint8_t mio5, mio4, mio3;
+};
+
+static const struct zynq_bootmode zynq_bootmodes[] = {
+	{ "jtag", 0, 0, 0 },
+	{ "qspi", 1, 0, 0 },
+	{ "nor",  0, 0, 1 },
+	{ "nand", 0, 1, 0 },
+	{ "sd",   1, 1, 0 },
+};
+
+static const struct zynq_bootmode *zynq_bootmode_find(const char *name)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(zynq_bootmodes); i++) {
+		if (0 == strcmp(name, zynq_bootmodes[i].name)) {
+			return &zynq_bootmodes[i];
+		}
+	}
+	return NULL;
+}
+
+/* Drive the straps. Takes effect at the next PS power-on reset. */
+static int zynq_bootmode_apply(const struct zynq_bootmode *bm, bool pll_bypass)
+{
+	int ret;
+
+	if (!gpio_is_ready_dt(&bs_mio2)) {
+		printk("bootmode: BCONF expander not ready\n");
+		return -ENODEV;
+	}
+
+	ret  = gpio_pin_configure_dt(&bs_mio2, GPIO_OUTPUT_INACTIVE);          /* cascaded JTAG */
+	ret |= gpio_pin_configure_dt(&bs_mio3, bm->mio3 ? GPIO_OUTPUT_ACTIVE : GPIO_OUTPUT_INACTIVE);
+	ret |= gpio_pin_configure_dt(&bs_mio4, bm->mio4 ? GPIO_OUTPUT_ACTIVE : GPIO_OUTPUT_INACTIVE);
+	ret |= gpio_pin_configure_dt(&bs_mio5, bm->mio5 ? GPIO_OUTPUT_ACTIVE : GPIO_OUTPUT_INACTIVE);
+	ret |= gpio_pin_configure_dt(&bs_mio6, pll_bypass ? GPIO_OUTPUT_ACTIVE : GPIO_OUTPUT_INACTIVE);
+	if (ret) {
+		printk("bootmode: failed to drive straps (%d)\n", ret);
+		return -EIO;
+	}
+	return 0;
+}
+
+/* Power-cycle the SoC so the PS samples the straps at POR. */
+static void zynq_por(void)
+{
+	gpio_pin_set_dt(&zynqpwen, 0);
+	k_sleep(K_MSEC(500));
+	gpio_pin_set_dt(&zynqpwen, 1);
+}
+
+static int cmd_bootmode(const struct shell *sh, size_t argc, char **argv)
+{
+	if (argc == 1) {
+		int m2 = gpio_pin_get_dt(&bs_mio2), m3 = gpio_pin_get_dt(&bs_mio3);
+		int m4 = gpio_pin_get_dt(&bs_mio4), m5 = gpio_pin_get_dt(&bs_mio5);
+		int m6 = gpio_pin_get_dt(&bs_mio6);
+		const char *name = "unknown";
+
+		for (size_t i = 0; i < ARRAY_SIZE(zynq_bootmodes); i++) {
+			if (zynq_bootmodes[i].mio5 == m5 && zynq_bootmodes[i].mio4 == m4 &&
+			    zynq_bootmodes[i].mio3 == m3) {
+				name = zynq_bootmodes[i].name;
+			}
+		}
+		shell_print(sh, "straps MIO[6:2] = %d%d%d%d%d -> %s%s%s", m6, m5, m4, m3, m2,
+			    name, m2 ? ", independent JTAG" : "", m6 ? ", PLL bypass" : "");
+		shell_print(sh, "SD_SEL = %d (0 = SD card slot)", gpio_pin_get_dt(&sd_sel));
+		return 0;
+	}
+
+	const struct zynq_bootmode *bm = zynq_bootmode_find(argv[1]);
+	bool por = true, pll_bypass = false;
+
+	if (!bm) {
+		goto help;
+	}
+	for (size_t i = 2; i < argc; i++) {
+		if (0 == strcmp(argv[i], "--no-por")) {
+			por = false;
+		} else if (0 == strcmp(argv[i], "--pll-bypass")) {
+			pll_bypass = true;
+		} else {
+			goto help;
+		}
+	}
+
+	if (zynq_bootmode_apply(bm, pll_bypass) < 0) {
+		return -EIO;
+	}
+	shell_print(sh, "boot mode %s%s set%s", bm->name, pll_bypass ? " (PLL bypass)" : "",
+		    por ? ", power-cycling the SoC" : " (takes effect at next PS POR)");
+	if (por) {
+		zynq_por();
+	}
+	return 0;
+
+help:
+	shell_print(sh, "bootmode                      show current straps");
+	shell_print(sh, "bootmode jtag|sd|qspi|nor|nand [--no-por] [--pll-bypass]");
+	shell_print(sh, "  sets the Zynq boot straps (via BCONF expander U24) and");
+	shell_print(sh, "  power-cycles the SoC so they are sampled (unless --no-por)");
+	return 0;
+}
+
+SHELL_CMD_REGISTER(bootmode, NULL, "Zynq boot mode (straps via BCONF expander)", cmd_bootmode);
+
 /* Creating root (level 0) command "clock" */
 SHELL_CMD_REGISTER(ps, NULL, "PS state (on -> start PS; off -> PS in reset state) commands", cmd_ps_switch);
 
@@ -864,6 +992,10 @@ int main(void)
 
 	gpio_pin_set_dt(&sw_i2c_rst, 1);
 	gpio_pin_set_dt(&sd_sel, 0);
+
+	/* Default Zynq boot mode: SD card (SD_SEL low selects the SD card slot).
+	 * The straps are sampled when the SoC is powered on below. */
+	zynq_bootmode_apply(zynq_bootmode_find("sd"), false);
 
 	
 	//gpio_pin_set_dt(&clk_i2c_rst, 1);

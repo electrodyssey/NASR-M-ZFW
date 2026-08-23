@@ -135,8 +135,23 @@
 
 	};
 
+	/* Zynq boot-mode straps, sampled by the PS at POR (see cmd_bootmode). */
+	zynq_bootstraps {
+		compatible = "gpio-leds";
+		bs_mio2: bs_mio2 { gpios = <&bconf_exp 0 GPIO_ACTIVE_HIGH>; label = "MIO2 JTAG independent"; };
+		bs_mio3: bs_mio3 { gpios = <&bconf_exp 1 GPIO_ACTIVE_HIGH>; label = "MIO3 boot mode"; };
+		bs_mio4: bs_mio4 { gpios = <&bconf_exp 2 GPIO_ACTIVE_HIGH>; label = "MIO4 boot mode"; };
+		bs_mio5: bs_mio5 { gpios = <&bconf_exp 3 GPIO_ACTIVE_HIGH>; label = "MIO5 boot mode"; };
+		bs_mio6: bs_mio6 { gpios = <&bconf_exp 4 GPIO_ACTIVE_HIGH>; label = "MIO6 PLL bypass"; };
+	};
+
 	aliases {
 		console = &usart1;
+		bsmio2 = &bs_mio2;
+		bsmio3 = &bs_mio3;
+		bsmio4 = &bs_mio4;
+		bsmio5 = &bs_mio5;
+		bsmio6 = &bs_mio6;
 		led0 = &status_led;
 		uartinvalid = &uartinvalidb;
 		atxpbtn = &atxpwrbtn;
@@ -296,6 +311,23 @@
               reg = <0>;
               #address-cells = <1>;
               #size-cells = <0>;
+
+              /* U24: boot-configuration expander (BCONF). P0..P4 drive the
+               * Zynq boot straps MIO2..MIO6 through 20k resistors, P5 drives
+               * FLASH_RST_B. Driven by the "bootmode" shell command. */
+              bconf_exp: tca6408a@20 {
+                  compatible = "ti,tca6408a";
+                  reg = <0x20>;
+                  label = "bconf";
+                  status = "okay";
+                  gpio-controller;
+                  #gpio-cells = <2>;
+                  ngpios = <8>;
+                  reset-gpios = <&gpioe 4 GPIO_ACTIVE_LOW>;   /* BCONF_RST_B */
+                  gpio-line-names = "MIO2_JTAG_INDEP", "MIO3_BOOT", "MIO4_BOOT",
+                                    "MIO5_BOOT", "MIO6_PLL_BYPASS", "FLASH_RST_B",
+                                    "nc", "P7";
+              };
           };
 
 
